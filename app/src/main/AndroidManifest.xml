@@ -1,0 +1,45 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="at.ac.htlstp.carsharing.app.carsharingapp">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="CarSharing"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/generalnotitle">
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" />
+
+        <activity
+            android:name=".Login"
+            android:theme="@style/generalnotitle">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".Main_drawer"
+            android:label="@string/title_activity_main_drawer"
+            android:theme="@style/generalnotitle.NoActionBar"/>
+        <activity android:name=".CurTask"
+            android:theme="@style/generalnotitle.NoActionBar"/>
+        <activity android:name=".AssignCar"
+            android:theme="@style/generalnotitle.NoActionBar"/>
+        <activity android:name=".ShowCars"
+            android:theme="@style/generalnotitle.NoActionBar"/>
+    </application>
+
+
+
+</manifest>
