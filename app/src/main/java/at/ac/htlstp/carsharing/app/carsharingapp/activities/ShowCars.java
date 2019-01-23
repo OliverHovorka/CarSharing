@@ -1,4 +1,4 @@
-package at.ac.htlstp.carsharing.app.carsharingapp;
+package at.ac.htlstp.carsharing.app.carsharingapp.activities;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -25,6 +25,10 @@ import org.joda.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 
+import at.ac.htlstp.carsharing.app.carsharingapp.R;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;

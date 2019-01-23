@@ -1,4 +1,4 @@
-package at.ac.htlstp.carsharing.app.carsharingapp;
+package at.ac.htlstp.carsharing.app.carsharingapp.activities;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -19,6 +19,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -51,6 +52,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import at.ac.htlstp.carsharing.app.carsharingapp.R;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.JobClient;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.MyLocationListener;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -63,7 +70,9 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
     private LocationRequest mLocationRequest;
     private static Bitmap smallMarkerPerson;
     private static GoogleMap gmap;
-    private static Marker user;
+    private static Marker userMarker;
+    private int userID;
+    private String vin;
     private static Polyline poly;
     private static LocationManager mLocationManager;
     private static CarCurrent curCar;
@@ -79,18 +88,22 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         Window w = this.getWindow();
         w.setStatusBarColor(ContextCompat.getColor(this, R.color.car2goBlue));
         Intent i = getIntent();
-        String vin = i.getStringExtra("carVin");
+        vin = i.getStringExtra("carVin");
+        userID = i.getIntExtra("userID", -1);
+        if (userID == -1) {
+            Log.e(TAG, "USERID couldnt be transferred");
+            Toast.makeText(AssignCar.this, "UserID could not be transferred", Toast.LENGTH_LONG).show();
+        }
+
         CarClient client = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
         Call<CarCurrent> carCall = client.getCar(vin);
         carCall.enqueue(new Callback<CarCurrent>() {
             @Override
             public void onResponse(Call<CarCurrent> call, Response<CarCurrent> response) {
                 curCar = response.body();
-                //FuelType ftest = curCar.getCar().getFuelType();
-                String test = "Diesel";
-                Long idletime = Instant.now().getMillis() - curCar.carCurrentPK.getTimestamp().getTime();
+                Long idletime = Instant.now().getMillis() - curCar.getCarCurrentPK().getTimestamp().getTime();
                 Date idle = new Date(idletime);
-                makeHeaderString(curCar.getCar().getModel(), curCar.getCar().getPlateNumber(), curCar.getCar().getFuelType().getType(), curCar.getFuelLevel() + "",idle.getHours() + "H " + idle.getMinutes() + "min");
+                makeHeaderString(curCar.getCar().getModel(), curCar.getCar().getPlateNumber(), curCar.getCar().getFuelType().getType(), curCar.getFuelLevel() + "", idle.getHours() + "H " + idle.getMinutes() + "min");
                 SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.mapViewCurTask);
                 mapFragment.getMapAsync(AssignCar.this);
@@ -187,15 +200,15 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
 
     public void handleNewLocation(Location location) {
         Log.e(TAG, "Handle New Location CurTask");
-        if (user != null) {
-            user.remove();
+        if (userMarker != null) {
+            userMarker.remove();
         }
         Log.d(TAG, location.toString());
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
         if (gmap != null) {
-            user = gmap.addMarker(new MarkerOptions()
+            userMarker = gmap.addMarker(new MarkerOptions()
                     .position(latLng)
                     .title("User")
                     .icon(BitmapDescriptorFactory.fromBitmap(smallMarkerPerson)));
@@ -266,7 +279,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
     public void makeRoute() {
         DateTime now = new DateTime();
         try {
-            com.google.maps.model.LatLng userloc = new com.google.maps.model.LatLng(user.getPosition().latitude, user.getPosition().longitude);
+            com.google.maps.model.LatLng userloc = new com.google.maps.model.LatLng(userMarker.getPosition().latitude, userMarker.getPosition().longitude);
             com.google.maps.model.LatLng carPos = new com.google.maps.model.LatLng(carMarker.getPosition().latitude, carMarker.getPosition().longitude);
             DirectionsResult result = DirectionsApi.newRequest(getGeoContext())
                     .mode(TravelMode.DRIVING).origin(userloc)
@@ -296,8 +309,23 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
 
     public void assignJob(View v) {
         Intent i = new Intent(this, CurTask.class);
-        this.startActivity(i);
-        i.putExtra("carVin", curCar.getCar().getVin());
+        JobClient jclient = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+        Call<Boolean> callJob = jclient.createJob(userID, vin);
+        callJob.enqueue(new Callback<Boolean>() {
+            @Override
+            public void onResponse(Call<Boolean> call, Response<Boolean> response) {
+                Log.e(TAG,"Job creation: uid:" + userID + " vin: " + vin);
+                Log.i(TAG,"Job creation status: " + response.code());
+                Log.i(TAG, "Job creation: " + response.body());
+            }
+
+            @Override
+            public void onFailure(Call<Boolean> call, Throwable t) {
+
+            }
+        });
+        i.putExtra("carVin", vin);
+        i.putExtra("userID", userID);
         this.startActivity(i);
     }
 }

@@ -3,10 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package at.ac.htlstp.carsharing.app.carsharingapp;
+package at.ac.htlstp.carsharing.app.carsharingapp.model;
 
 import java.io.Serializable;
-
 /**
  *
  * @author Heinzl

@@ -110,5 +110,4 @@
         android:textColor="@color/common_google_signin_btn_text_dark_default"
         tools:layout_editor_absoluteX="122dp"
         tools:layout_editor_absoluteY="375dp" />
-
 </RelativeLayout>

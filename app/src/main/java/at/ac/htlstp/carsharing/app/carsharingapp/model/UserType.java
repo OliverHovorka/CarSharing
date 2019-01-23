@@ -3,28 +3,25 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package at.ac.htlstp.carsharing.app.carsharingapp;
+package at.ac.htlstp.carsharing.app.carsharingapp.model;
 
 import java.io.Serializable;
-import java.util.Date;
 
 /**
  *
  * @author Heinzl
  */
-public class Job implements Serializable {
+
+public class UserType implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private Integer id;
-    private Date startTime;
-    private Date endTime;
-    private Car vin;
-    private User uid;
+    private String type;
 
-    public Job() {
+    public UserType() {
     }
 
-    public Job(Integer id) {
+    public UserType(Integer id) {
         this.id = id;
     }
 
@@ -36,36 +33,12 @@ public class Job implements Serializable {
         this.id = id;
     }
 
-    public Date getStartTime() {
-        return startTime;
+    public String getType() {
+        return type;
     }
 
-    public void setStartTime(Date startTime) {
-        this.startTime = startTime;
-    }
-
-    public Date getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(Date endTime) {
-        this.endTime = endTime;
-    }
-
-    public Car getVin() {
-        return vin;
-    }
-
-    public void setVin(Car vin) {
-        this.vin = vin;
-    }
-
-    public User getUid() {
-        return uid;
-    }
-
-    public void setUid(User uid) {
-        this.uid = uid;
+    public void setType(String type) {
+        this.type = type;
     }
 
     @Override
@@ -78,10 +51,10 @@ public class Job implements Serializable {
     @Override
     public boolean equals(Object object) {
         // TODO: Warning - this method won't work in the case the id fields are not set
-        if (!(object instanceof Job)) {
+        if (!(object instanceof UserType)) {
             return false;
         }
-        Job other = (Job) object;
+        UserType other = (UserType) object;
         if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
@@ -90,7 +63,7 @@ public class Job implements Serializable {
 
     @Override
     public String toString() {
-        return "at.ac.htlstp.carsharing.server.model.Job[ id=" + id + " ]";
+        return "at.ac.htlstp.carsharing.server.model.UserType[ id=" + id + " ]";
     }
 
 }

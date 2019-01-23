@@ -1,9 +1,21 @@
-package at.ac.htlstp.carsharing.app.carsharingapp;
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package at.ac.htlstp.carsharing.app.carsharingapp.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
-public class CarCurrent {
+/**
+ *
+ * @author Heinzl
+ */
+
+public class CarCurrent implements Serializable {
+
     private static final long serialVersionUID = 1L;
     protected CarCurrentPK carCurrentPK;
     private Integer fuelLevel;
@@ -93,7 +105,7 @@ public class CarCurrent {
 
     @Override
     public String toString() {
-        return "Car: " + this.getCar().getModel() + " " + this.getCar().getPlateNumber() + "; " + this.getFuelLevel();
+        return "at.ac.htlstp.carsharing.server.model.CarCurrent[ carCurrentPK=" + carCurrentPK + " ]";
     }
 
 }

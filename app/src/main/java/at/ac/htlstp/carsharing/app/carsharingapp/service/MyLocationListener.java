@@ -1,9 +1,12 @@
-package at.ac.htlstp.carsharing.app.carsharingapp;
+package at.ac.htlstp.carsharing.app.carsharingapp.service;
 
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
 import android.util.Log;
+
+import at.ac.htlstp.carsharing.app.carsharingapp.activities.AssignCar;
+import at.ac.htlstp.carsharing.app.carsharingapp.activities.CurTask;
 
 import static android.content.ContentValues.TAG;
 

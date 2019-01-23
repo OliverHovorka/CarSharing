@@ -1,4 +1,4 @@
-package at.ac.htlstp.carsharing.app.carsharingapp;
+package at.ac.htlstp.carsharing.app.carsharingapp.activities;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -53,6 +53,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import at.ac.htlstp.carsharing.app.carsharingapp.R;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.MyLocationListener;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -66,7 +71,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     private LocationRequest mLocationRequest;
     private static Bitmap smallMarkerPerson;
     private static GoogleMap gmap;
-    private static Marker user;
+    private static Marker userMarker;
     private static Marker carMarker;
     private static CarCurrent curCar;
     private static Polyline poly;
@@ -96,16 +101,15 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         Intent i = getIntent();
 
         String vin = i.getStringExtra("carVin");
-        if (vin != null) {
+
+        if (!"noJob".equals(vin)) {
             CarClient client = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
             Call<CarCurrent> carCall = client.getCar(vin);
             carCall.enqueue(new Callback<CarCurrent>() {
                 @Override
                 public void onResponse(Call<CarCurrent> call, Response<CarCurrent> response) {
                     curCar = response.body();
-                    //FuelType ftest = curCar.getCar().getFuelType();
-                    String test = "Diesel";
-                    Long idletime = Instant.now().getMillis() - curCar.carCurrentPK.getTimestamp().getTime();
+                    Long idletime = Instant.now().getMillis() - curCar.getCarCurrentPK().getTimestamp().getTime();
                     Date idle = new Date(idletime);
                     makeHeaderString(curCar.getCar().getModel(), curCar.getCar().getPlateNumber(), curCar.getCar().getFuelType().getType(), curCar.getFuelLevel() + "", idle.getHours() + "H " + idle.getMinutes() + "min");
                     SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -198,15 +202,15 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
 
     public void handleNewLocation(Location location) {
         Log.e(TAG, "Handle New Location CurTask");
-        if (user != null) {
-            user.remove();
+        if (userMarker != null) {
+            userMarker.remove();
         }
         Log.d(TAG, location.toString());
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
         if (gmap != null) {
-            user = gmap.addMarker(new MarkerOptions()
+            userMarker = gmap.addMarker(new MarkerOptions()
                     .position(latLng)
                     .title("User")
                     .icon(BitmapDescriptorFactory.fromBitmap(smallMarkerPerson)));
@@ -257,7 +261,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     public void makeRoute() {
         DateTime now = new DateTime();
         try {
-            com.google.maps.model.LatLng userloc = new com.google.maps.model.LatLng(user.getPosition().latitude, user.getPosition().longitude);
+            com.google.maps.model.LatLng userloc = new com.google.maps.model.LatLng(userMarker.getPosition().latitude, userMarker.getPosition().longitude);
             com.google.maps.model.LatLng carPos = new com.google.maps.model.LatLng(carMarker.getPosition().latitude, carMarker.getPosition().longitude);
             DirectionsResult result = DirectionsApi.newRequest(getGeoContext())
                     .mode(TravelMode.DRIVING).origin(userloc)

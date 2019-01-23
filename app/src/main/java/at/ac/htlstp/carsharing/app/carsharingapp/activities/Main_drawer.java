@@ -1,7 +1,9 @@
-package at.ac.htlstp.carsharing.app.carsharingapp;
+package at.ac.htlstp.carsharing.app.carsharingapp.activities;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
@@ -9,6 +11,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -37,6 +40,15 @@ import com.google.android.gms.maps.model.Polyline;
 
 import java.util.List;
 
+import at.ac.htlstp.carsharing.app.carsharingapp.R;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.Job;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.User;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.UserCurrent;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.JobClient;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.UserClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -51,9 +63,11 @@ public class Main_drawer extends AppCompatActivity
     private LocationRequest mLocationRequest;
     private static Bitmap smallMarkerPerson;
     private static GoogleMap gmap;
-    private static Marker user;
+    private static Marker userMarker;
+    private static User user;
     private static Polyline poly;
     private static Bitmap smallMarker = null;
+    private int userID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +75,34 @@ public class Main_drawer extends AppCompatActivity
         setContentView(R.layout.activity_main_drawer);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        Intent logI = getIntent();
+        userID = logI.getIntExtra("userID",-1);
+        if(userID == -1){
+            Log.e(TAG,"USERID couldnt be transferred");
+            Toast.makeText(Main_drawer.this, "UserID could not be transferred", Toast.LENGTH_LONG).show();
+        }
+
+        UserClient uclient = GenericService.getClient(UserClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+        Call<User> callUser = uclient.getUser(userID);
+        callUser.enqueue(new Callback<User>() {
+            @Override
+            public void onResponse(Call<User> call, Response<User> response) {
+                if(response.body() == null){
+                    Log.e(TAG,"USER could not be called");
+                    Toast.makeText(Main_drawer.this, "User could not be called: " + response.body() + " code: " + response.code(), Toast.LENGTH_LONG).show();
+                    return;
+                }
+                user = response.body();
+                Log.e(TAG,"User was loaded: " + user.toString());
+            }
+
+            @Override
+            public void onFailure(Call<User> call, Throwable t) {
+                Log.e(TAG,"Failure while loading user: uid: " + userID);
+                Toast.makeText(Main_drawer.this, "User could not be loaded", Toast.LENGTH_LONG).show();
+            }
+        });
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -95,13 +137,12 @@ public class Main_drawer extends AppCompatActivity
         gmap = googleMap;
         gmap.setOnMarkerClickListener(this);
         gmap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
-        LatLng standort = new LatLng(48.7791878, 9.1071759);
+        LatLng standort = new LatLng(48.21809, 16.2660599);
         BitmapDrawable bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(getResources(), R.drawable.car_marker, null);
         Bitmap b = bitmapdraw.getBitmap();
         smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
-        CarClient client = GenericService.getClient(CarClient.class,"ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+        CarClient client = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
         Call<List<CarCurrent>> carCall = client.getCars();
-        Log.e(TAG, " TESTCALL " + carCall.toString());
         carCall.enqueue(new Callback<List<CarCurrent>>() {
             @Override
             public void onResponse(Call<List<CarCurrent>> call, Response<List<CarCurrent>> response) {
@@ -122,8 +163,8 @@ public class Main_drawer extends AppCompatActivity
             }
         });
         gmap.moveCamera(CameraUpdateFactory.newLatLng(standort));
-        googleMap.setMinZoomPreference(7.0f);
-        googleMap.setMaxZoomPreference(60.0f);
+        googleMap.setMinZoomPreference(9.0f);
+        googleMap.setMaxZoomPreference(50.0f);
 
     }
 
@@ -144,15 +185,36 @@ public class Main_drawer extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-        Intent i;
+        final Intent i;
         if (id == R.id.current_task) {
             i = new Intent(this, CurTask.class);
-            this.startActivity(i);
+            JobClient jclient = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+            Call<Job> callJob = jclient.getCurrentJobForUser(user.getId());
+            callJob.enqueue(new Callback<Job>() {
+                @Override
+                public void onResponse(Call<Job> call, Response<Job> response) {
+                    Job j = response.body();
+                    if(j == null){
+                        Toast.makeText(Main_drawer.this,"User has no Job currently",Toast.LENGTH_LONG).show();
+                        return;
+                    }else {
+                        i.putExtra("carVin", j.getVin().getVin());
+                        i.putExtra("userID", user.getId());
+                        Main_drawer.this.startActivity(i);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<Job> call, Throwable t) {
+                    Toast.makeText(Main_drawer.this,"Job could not be loaded",Toast.LENGTH_LONG).show();
+                }
+            });
+
         } else if (id == R.id.prev_tasks) {
 
         } else if (id == R.id.show_cars) {
             i = new Intent(this, ShowCars.class);
-            i.putExtra("Userlocation",user.getPosition().latitude + ";" + user.getPosition().longitude);
+            i.putExtra("Userlocation", userMarker.getPosition().latitude + ";" + userMarker.getPosition().longitude);
             this.startActivity(i);
         } else if (id == R.id.logout) {
 
@@ -182,23 +244,27 @@ public class Main_drawer extends AppCompatActivity
     @SuppressWarnings("")
     public void onConnected(@Nullable Bundle bundle) {
         Log.i(TAG, "Location services connected.");
-        Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (location == null) {
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            if (location == null) {
+                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+            } else {
+                handleNewLocation(location);
+            }
         } else {
-            handleNewLocation(location);
+
         }
     }
 
     private void handleNewLocation(Location location) {
-        if (user != null) {
-            user.remove();
+        if (userMarker != null) {
+            userMarker.remove();
         }
         Log.d(TAG, location.toString());
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
-        user = gmap.addMarker(new MarkerOptions()
+        userMarker = gmap.addMarker(new MarkerOptions()
                 .position(latLng)
                 .title("User")
                 .icon(BitmapDescriptorFactory.fromBitmap(smallMarkerPerson)));
@@ -237,13 +303,15 @@ public class Main_drawer extends AppCompatActivity
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        Log.e(TAG,"MARKER CLICKED");
-        if("User".equals(marker.getTitle())){
+        Log.e(TAG, "MARKER CLICKED");
+        if ("User".equals(marker.getTitle())) {
             Toast.makeText(this, "Can not navigate to user!", Toast.LENGTH_LONG).show();
             return false;
-        }else {
+        } else {
             Intent i = new Intent(this, AssignCar.class);
             i.putExtra("carVin", marker.getTitle());
+            i.putExtra("userID", user.getId());
+            Log.e(TAG,"AssignCar: " + userID);
             this.startActivity(i);
             return true;
         }

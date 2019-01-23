@@ -39,7 +39,7 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
         android:layout_marginTop="17dp"
-        tools:context=".CurTask" />
+        tools:context=".activities.CurTask" />
 
     <Button
         android:id="@+id/assignCar"

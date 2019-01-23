@@ -1,8 +1,19 @@
-package at.ac.htlstp.carsharing.app.carsharingapp;
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package at.ac.htlstp.carsharing.app.carsharingapp.model;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class CarCurrentPK {
+/**
+ *
+ * @author Heinzl
+ */
+public class CarCurrentPK implements Serializable {
+
     private String vin;
     private Date timestamp;
 
@@ -58,6 +69,5 @@ public class CarCurrentPK {
     public String toString() {
         return "at.ac.htlstp.carsharing.server.model.CarCurrentPK[ vin=" + vin + ", timestamp=" + timestamp + " ]";
     }
-
 
 }
