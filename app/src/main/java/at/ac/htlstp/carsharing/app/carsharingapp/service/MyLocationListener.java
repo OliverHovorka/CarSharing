@@ -31,11 +31,9 @@ public class MyLocationListener implements LocationListener{
     public void onLocationChanged(Location location) {
         if(diff) {
             Log.e(TAG, "LOCATION CHANGED CURTASK");
-            task.testLog("LOCATION CHANGED CURTASK");
             task.handleNewLocation(location);
         }else{
             Log.e(TAG, "LOCATION CHANGED ASSIGNCAR");
-            assCar.testLog("LOCATION CHANGED ASSIGNCAR");
             assCar.handleNewLocation(location);
         }
     }

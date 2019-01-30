@@ -38,19 +38,23 @@
         android:layout_below="@+id/imageView3"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
+        android:layout_marginStart="0dp"
         android:layout_marginTop="17dp"
+        android:layout_marginBottom="0dp"
         tools:context=".activities.CurTask" />
 
     <Button
         android:id="@+id/assignCar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="9dp"
+        android:layout_marginStart="70dp"
+        android:layout_marginBottom="5dp"
         android:background="@color/car2goBlue"
         android:onClick="assignJob"
-        android:text="Assign Car" />
+        android:text="Assign Car"
+        android:textColor="@color/ownWhite" />
 
     <TextView
         android:id="@+id/car_details"
@@ -62,5 +66,17 @@
         android:text="TextView"
         android:textColor="@android:color/white"
         android:textSize="25sp" />
+
+    <Button
+        android:id="@+id/setDestination"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="70dp"
+        android:layout_marginBottom="7dp"
+        android:background="@color/car2goBlue"
+        android:text="Set Destination"
+        android:textColor="@color/ownWhite" />
 
 </RelativeLayout>

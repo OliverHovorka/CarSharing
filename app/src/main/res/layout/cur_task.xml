@@ -51,7 +51,8 @@
         android:layout_marginBottom="7dp"
         android:background="@color/car2goBlue"
         android:onClick="redirectMaps"
-        android:text="Navigate" />
+        android:text="Navigate"
+        android:textColor="@color/ownWhite"/>
 
     <TextView
         android:id="@+id/car_details"
@@ -74,6 +75,7 @@
         android:layout_marginBottom="7dp"
         android:background="@color/car2goBlue"
         android:onClick="mainMenu"
-        android:text="Main Menu" />
+        android:text="Main Menu"
+        android:textColor="@color/ownWhite"/>
 
 </RelativeLayout>

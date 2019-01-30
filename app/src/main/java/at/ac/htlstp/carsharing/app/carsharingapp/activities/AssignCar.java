@@ -63,7 +63,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, LocationListener,
-        GoogleApiClient.OnConnectionFailedListener {
+        GoogleApiClient.OnConnectionFailedListener,GoogleMap.OnMapLongClickListener {
     private GoogleApiClient mGoogleApiClient;
     public static final String TAG = Main_drawer.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
@@ -74,10 +74,14 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
     private int userID;
     private String vin;
     private static Polyline poly;
+    private static Polyline poly2;
     private static LocationManager mLocationManager;
     private static CarCurrent curCar;
     private static Marker carMarker;
-
+    private static Marker destMarker;
+    private static com.google.maps.model.LatLng dest;
+    private static Bitmap carIcon;
+    private static boolean fixed = false;
 
     @SuppressLint({"MissingPermission", "NewApi"})
     @Override
@@ -153,11 +157,12 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
     public void onMapReady(GoogleMap googleMap) {
         gmap = googleMap;
         googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
+        gmap.setOnMapLongClickListener(this);
         LatLng wien = new LatLng(48.241696, 16.372928);
         BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.car_marker);
         Bitmap b = bitmapdraw.getBitmap();
         Bitmap smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
-
+        carIcon = smallMarker;
         LatLng pos = new LatLng(curCar.getLat().doubleValue(), curCar.getLng().doubleValue());
 
         carMarker = googleMap.addMarker(new MarkerOptions()
@@ -295,38 +300,92 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         }
     }
 
-    private void addPolyline(DirectionsResult results) {
-        if (poly != null) {
-            poly.remove();
+    public void makeRoutewithDest(){
+        DateTime now = new DateTime();
+        try {
+            com.google.maps.model.LatLng userloc = new com.google.maps.model.LatLng(userMarker.getPosition().latitude, userMarker.getPosition().longitude);
+            com.google.maps.model.LatLng carPos = new com.google.maps.model.LatLng(carMarker.getPosition().latitude, carMarker.getPosition().longitude);
+            DirectionsResult resultCar = DirectionsApi.newRequest(getGeoContext())
+                    .mode(TravelMode.DRIVING).origin(userloc)
+                    .destination(carPos).departureTime(now)
+                    .await();
+            DirectionsResult resultDest = DirectionsApi.newRequest(getGeoContext())
+                    .mode(TravelMode.DRIVING).origin(carPos)
+                    .destination(dest).departureTime(now)
+                    .await();
+            addPolyline(resultCar);
+            addSecondPolyline(resultDest);
+        } catch (ApiException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+    }
+
+
+    private void addPolyline(DirectionsResult results) {
         List<LatLng> decodedPath = PolyUtil.decode(results.routes[0].overviewPolyline.getEncodedPath());
         poly = gmap.addPolyline(new PolylineOptions().addAll(decodedPath));
     }
 
-    public void testLog(String msg) {
-        Log.e(TAG, msg);
+    private void addSecondPolyline(DirectionsResult result){
+        if(poly2 != null){
+            poly2.remove();
+        }
+        List<LatLng> decodedPath = PolyUtil.decode(result.routes[0].overviewPolyline.getEncodedPath());
+        poly2 = gmap.addPolyline(new PolylineOptions().addAll(decodedPath));
     }
 
     public void assignJob(View v) {
-        Intent i = new Intent(this, CurTask.class);
-        JobClient jclient = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
-        Call<Boolean> callJob = jclient.createJob(userID, vin);
-        callJob.enqueue(new Callback<Boolean>() {
-            @Override
-            public void onResponse(Call<Boolean> call, Response<Boolean> response) {
-                Log.e(TAG,"Job creation: uid:" + userID + " vin: " + vin);
-                Log.i(TAG,"Job creation status: " + response.code());
-                Log.i(TAG, "Job creation: " + response.body());
-            }
+        if(dest!=null) {
+            Intent i = new Intent(this, CurTask.class);
+            JobClient jclient = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+            Call<Boolean> callJob = jclient.createJob(userID, vin);
+            callJob.enqueue(new Callback<Boolean>() {
+                @Override
+                public void onResponse(Call<Boolean> call, Response<Boolean> response) {
+                    Log.e(TAG, "Job creation: uid:" + userID + " vin: " + vin);
+                    Log.i(TAG, "Job creation status: " + response.code());
+                    Log.i(TAG, "Job creation: " + response.body());
+                }
 
-            @Override
-            public void onFailure(Call<Boolean> call, Throwable t) {
+                @Override
+                public void onFailure(Call<Boolean> call, Throwable t) {
 
+                }
+            });
+            i.putExtra("carVin", vin);
+            i.putExtra("userID", userID);
+            i.putExtra("destLatitude", dest.lat);
+            i.putExtra("destLongitude",dest.lng);
+            this.startActivity(i);
+        }else{
+            Toast.makeText(this,"Keine Destination gestzt",Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void setDestination(View v) {
+        fixed = true;
+    }
+
+
+    @Override
+    public void onMapLongClick(LatLng latLng) {
+        if(!fixed) {
+            dest = new com.google.maps.model.LatLng(latLng.latitude, latLng.longitude);
+            if (gmap != null) {
+                if (destMarker != null) {
+                    destMarker.remove();
+                }
+                destMarker = gmap.addMarker(new MarkerOptions()
+                        .position(latLng)
+                        .title("Dest")
+                        .icon(BitmapDescriptorFactory.fromBitmap(carIcon)));
+                makeRoutewithDest();
             }
-        });
-        i.putExtra("carVin", vin);
-        i.putExtra("userID", userID);
-        this.startActivity(i);
+        }
     }
 }
 

@@ -49,6 +49,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Instant;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -73,9 +74,12 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     private static GoogleMap gmap;
     private static Marker userMarker;
     private static Marker carMarker;
+    private static Marker destMarker;
     private static CarCurrent curCar;
     private static Polyline poly;
     private static LocationManager mLocationManager;
+    private int userID;
+    private LatLng dest;
 
 
     @SuppressLint({"MissingPermission", "NewApi"})
@@ -99,7 +103,15 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                 .setFastestInterval(1 * 1000); // 1 second, in milliseconds
 
         Intent i = getIntent();
-
+        userID = i.getIntExtra("userID",-1);
+        //TEMPORÄR
+        double lat= i.getDoubleExtra("destLatitude", -1);
+        double lng = i.getDoubleExtra("destLongitude",-1);
+        dest = new LatLng(lat,lng);
+        //
+        if(userID == -1){
+            Toast.makeText(CurTask.this,"USERID could not be tranferred",Toast.LENGTH_LONG).show();
+        }
         String vin = i.getStringExtra("carVin");
 
         if (!"noJob".equals(vin)) {
@@ -166,6 +178,12 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                 .position(pos)
                 .title(curCar.getCar().getVin())
                 .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
+
+        destMarker = googleMap.addMarker(new MarkerOptions()
+                .position(dest)
+                .title("Destination")
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
+
         //Marker mk = googleMap.addMarker(new MarkerOptions().position(wien).title("Wien").icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_car_fullsale)));
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(wien));
         googleMap.setMinZoomPreference(9.0f);
@@ -206,9 +224,10 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
             userMarker.remove();
         }
         Log.d(TAG, location.toString());
-        double currentLatitude = location.getLatitude();
-        double currentLongitude = location.getLongitude();
-        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+        BigDecimal currentLatitude = new BigDecimal(location.getLatitude());
+        BigDecimal currentLongitude = new BigDecimal(location.getLongitude());
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+
         if (gmap != null) {
             userMarker = gmap.addMarker(new MarkerOptions()
                     .position(latLng)
@@ -243,11 +262,6 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
 
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
-        Log.e(TAG, "LOCATION CHANGED CURTASK");
-        handleNewLocation(location);
-    }
 
     private GeoApiContext getGeoContext() {
         GeoApiContext geoApiContext = new GeoApiContext();
@@ -267,7 +281,13 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                     .mode(TravelMode.DRIVING).origin(userloc)
                     .destination(carPos).departureTime(now)
                     .await();
+            com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(dest.latitude,dest.longitude);
+            DirectionsResult result2 = DirectionsApi.newRequest(getGeoContext())
+                    .mode(TravelMode.DRIVING).origin(carPos)
+                    .destination(destination).departureTime(now)
+                    .await();
             addPolyline(result);
+            addPolyline(result2);
         } catch (ApiException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -278,9 +298,6 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     }
 
     private void addPolyline(DirectionsResult results) {
-        if (poly != null) {
-            poly.remove();
-        }
         List<LatLng> decodedPath = PolyUtil.decode(results.routes[0].overviewPolyline.getEncodedPath());
         poly = gmap.addPolyline(new PolylineOptions().addAll(decodedPath));
     }
@@ -305,12 +322,16 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         t.setText(sb.toString());
     }
 
-    public void testLog(String msg) {
-        Log.e(TAG, msg);
+    @Override
+    public void onLocationChanged(Location location) {
+        Log.e(TAG, "LOCATION CHANGED MAIN");
+        handleNewLocation(location);
     }
 
     public void redirectMaps(View v) {
-        Uri gmmIntentUri = Uri.parse("google.navigation:q=" + carMarker.getPosition().latitude + "," + carMarker.getPosition().longitude);
+        Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=" + userMarker.getPosition().latitude + "," + userMarker.getPosition().longitude +
+                "&destination=" + carMarker.getPosition().latitude + "," + carMarker.getPosition().longitude +
+                "&waypoints=" + dest.latitude + "," + dest.longitude + "&travelmode=driving");
         Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
         mapIntent.setPackage("com.google.android.apps.maps");
         if (mapIntent.resolveActivity(getPackageManager()) != null) {
@@ -320,6 +341,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
 
     public void mainMenu(View v) {
         Intent i = new Intent(this, Main_drawer.class);
+        i.putExtra("userID", userID);
         this.startActivity(i);
     }
 }
