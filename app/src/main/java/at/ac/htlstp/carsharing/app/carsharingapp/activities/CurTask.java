@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Criteria;
 import android.location.Location;
@@ -103,14 +104,14 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                 .setFastestInterval(1 * 1000); // 1 second, in milliseconds
 
         Intent i = getIntent();
-        userID = i.getIntExtra("userID",-1);
+        userID = i.getIntExtra("userID", -1);
         //TEMPORÄR
-        double lat= i.getDoubleExtra("destLatitude", -1);
-        double lng = i.getDoubleExtra("destLongitude",-1);
-        dest = new LatLng(lat,lng);
+        double lat = i.getDoubleExtra("destLatitude", -1);
+        double lng = i.getDoubleExtra("destLongitude", -1);
+        dest = new LatLng(lat, lng);
         //
-        if(userID == -1){
-            Toast.makeText(CurTask.this,"USERID could not be tranferred",Toast.LENGTH_LONG).show();
+        if (userID == -1) {
+            Toast.makeText(CurTask.this, "USERID could not be tranferred", Toast.LENGTH_LONG).show();
         }
         String vin = i.getStringExtra("carVin");
 
@@ -179,12 +180,15 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                 .title(curCar.getCar().getVin())
                 .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
 
+        bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.dest_marker);
+        b = bitmapdraw.getBitmap();
+        smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
+
         destMarker = googleMap.addMarker(new MarkerOptions()
                 .position(dest)
                 .title("Destination")
                 .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
 
-        //Marker mk = googleMap.addMarker(new MarkerOptions().position(wien).title("Wien").icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_car_fullsale)));
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(wien));
         googleMap.setMinZoomPreference(9.0f);
         googleMap.setMaxZoomPreference(50.0f);
@@ -281,7 +285,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                     .mode(TravelMode.DRIVING).origin(userloc)
                     .destination(carPos).departureTime(now)
                     .await();
-            com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(dest.latitude,dest.longitude);
+            com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(dest.latitude, dest.longitude);
             DirectionsResult result2 = DirectionsApi.newRequest(getGeoContext())
                     .mode(TravelMode.DRIVING).origin(carPos)
                     .destination(destination).departureTime(now)
@@ -299,7 +303,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
 
     private void addPolyline(DirectionsResult results) {
         List<LatLng> decodedPath = PolyUtil.decode(results.routes[0].overviewPolyline.getEncodedPath());
-        poly = gmap.addPolyline(new PolylineOptions().addAll(decodedPath));
+        poly = gmap.addPolyline(new PolylineOptions().addAll(decodedPath).color(Color.rgb(0,158,224)));
     }
 
     public void makeHeaderString(String car, String plateNumber, String fuelType, String fuelLevel, String idleTime) {

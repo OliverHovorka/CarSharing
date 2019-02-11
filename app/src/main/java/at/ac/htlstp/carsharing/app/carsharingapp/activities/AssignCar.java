@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Criteria;
 import android.location.Location;
@@ -81,6 +82,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
     private static Marker destMarker;
     private static com.google.maps.model.LatLng dest;
     private static Bitmap carIcon;
+    private static Bitmap destIcon;
     private static boolean fixed = false;
 
     @SuppressLint({"MissingPermission", "NewApi"})
@@ -129,6 +131,10 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                 .setInterval(10 * 1000)        // 10 seconds, in milliseconds
                 .setFastestInterval(1 * 1000); // 1 second, in milliseconds
 
+        BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.dest_marker);
+        Bitmap b = bitmapdraw.getBitmap();
+        Bitmap smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
+        destIcon = smallMarker;
         /*-------------------- Location Listener ---------------------------*/
         // The minimum time (in miliseconds) the system will wait until checking if the location changed
         int minTime = 1000;
@@ -148,8 +154,8 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
 
         /*------------------------- End of Location Listener -------------------------------*/
 
-        BitmapDrawable bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(getResources(), R.drawable.person_marker, null);
-        Bitmap b = bitmapdraw.getBitmap();
+        bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(getResources(), R.drawable.person_marker, null);
+        b = bitmapdraw.getBitmap();
         smallMarkerPerson = Bitmap.createScaledBitmap(b, 200, 200, false);
     }
 
@@ -327,7 +333,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
 
     private void addPolyline(DirectionsResult results) {
         List<LatLng> decodedPath = PolyUtil.decode(results.routes[0].overviewPolyline.getEncodedPath());
-        poly = gmap.addPolyline(new PolylineOptions().addAll(decodedPath));
+        poly = gmap.addPolyline(new PolylineOptions().addAll(decodedPath).color(Color.rgb(0,158,224)));
     }
 
     private void addSecondPolyline(DirectionsResult result){
@@ -335,7 +341,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
             poly2.remove();
         }
         List<LatLng> decodedPath = PolyUtil.decode(result.routes[0].overviewPolyline.getEncodedPath());
-        poly2 = gmap.addPolyline(new PolylineOptions().addAll(decodedPath));
+        poly2 = gmap.addPolyline(new PolylineOptions().addAll(decodedPath).color(Color.rgb(0,158,224)));
     }
 
     public void assignJob(View v) {
@@ -353,7 +359,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
 
                 @Override
                 public void onFailure(Call<Boolean> call, Throwable t) {
-
+                    Log.e(TAG,"Job creation failed");
                 }
             });
             i.putExtra("carVin", vin);
@@ -382,7 +388,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                 destMarker = gmap.addMarker(new MarkerOptions()
                         .position(latLng)
                         .title("Dest")
-                        .icon(BitmapDescriptorFactory.fromBitmap(carIcon)));
+                        .icon(BitmapDescriptorFactory.fromBitmap(destIcon)));
                 makeRoutewithDest();
             }
         }

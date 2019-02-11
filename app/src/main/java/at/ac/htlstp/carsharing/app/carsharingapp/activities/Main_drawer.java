@@ -159,7 +159,7 @@ public class Main_drawer extends AppCompatActivity
 
             @Override
             public void onFailure(Call<List<CarCurrent>> call, Throwable t) {
-                Log.e(TAG, "Car call failed");
+                Log.e(TAG, "Car call failed + : " + t.fillInStackTrace());
             }
         });
         gmap.moveCamera(CameraUpdateFactory.newLatLng(standort));

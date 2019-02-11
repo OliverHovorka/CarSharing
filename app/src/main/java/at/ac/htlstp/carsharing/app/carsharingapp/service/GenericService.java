@@ -33,8 +33,8 @@ public class GenericService {
             }
         }
 
-        String API_BASE_URL = "https://fysch.privatevoid.net/server/rest/";
-        Gson gson = new GsonBuilder().setLenient().create();
+        String API_BASE_URL = "https://wildefliege.privatevoid.net/server/rest/";
+        Gson gson = new GsonBuilder().setLenient().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
         
         OkHttpClient okClient = new OkHttpClient.Builder().addInterceptor(new Interceptor() {
             @Override
