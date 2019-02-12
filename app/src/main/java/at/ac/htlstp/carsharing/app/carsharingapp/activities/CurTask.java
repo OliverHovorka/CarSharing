@@ -60,6 +60,7 @@ import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.MyLocationListener;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.UserClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -124,7 +125,8 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                     curCar = response.body();
                     Long idletime = Instant.now().getMillis() - curCar.getCarCurrentPK().getTimestamp().getTime();
                     Date idle = new Date(idletime);
-                    makeHeaderString(curCar.getCar().getModel(), curCar.getCar().getPlateNumber(), curCar.getCar().getFuelType().getType(), curCar.getFuelLevel() + "", idle.getHours() + "H " + idle.getMinutes() + "min");
+                    makeHeaderString(curCar.getCar().getModel(), curCar.getCar().getPlateNumber(), curCar.getCar().getFuelType().getType(), curCar.getFuelLevel() + "",
+                            curCar.getHourDifference() + "H " + curCar.getMinuteDifference() + "min");
                     SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                             .findFragmentById(R.id.mapViewCurTask);
                     mapFragment.getMapAsync(CurTask.this);
@@ -190,7 +192,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                 .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
 
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(wien));
-        googleMap.setMinZoomPreference(9.0f);
+        googleMap.setMinZoomPreference(10.0f);
         googleMap.setMaxZoomPreference(50.0f);
     }
 
@@ -223,13 +225,25 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     }
 
     public void handleNewLocation(Location location) {
-        Log.e(TAG, "Handle New Location CurTask");
+        Log.i(TAG, "Handle New Location CurTask");
         if (userMarker != null) {
             userMarker.remove();
         }
-        Log.d(TAG, location.toString());
-        BigDecimal currentLatitude = new BigDecimal(location.getLatitude());
-        BigDecimal currentLongitude = new BigDecimal(location.getLongitude());
+        UserClient userPos = GenericService.getClient(UserClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+        BigDecimal lat = new BigDecimal(location.getLatitude());
+        BigDecimal lng = new BigDecimal(location.getLongitude());
+        Call<Boolean> updateSucc = userPos.updateUserPosition(userID,lat,lng);
+        updateSucc.enqueue(new Callback<Boolean>() {
+            @Override
+            public void onResponse(Call<Boolean> call, Response<Boolean> response) {
+                Log.i(TAG,"Userposition update successful");
+            }
+
+            @Override
+            public void onFailure(Call<Boolean> call, Throwable t) {
+                Log.e(TAG,"Userposition update failed");
+            }
+        });
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         if (gmap != null) {
@@ -237,14 +251,14 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                     .position(latLng)
                     .title("User")
                     .icon(BitmapDescriptorFactory.fromBitmap(smallMarkerPerson)));
-            Log.e(TAG, "New Marker Added CURTASK");
+            Log.i(TAG, "New Marker Added CURTASK");
             makeRoute();
         }
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-        Log.i(TAG, "Location services suspended. Please reconnect.");
+        Log.e(TAG, "Location services suspended. Please reconnect.");
     }
 
     @Override
@@ -257,7 +271,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                 e.printStackTrace();
             }
         } else {
-            Log.i(TAG, "Location services connection failed with code " + connectionResult.getErrorCode());
+            Log.e(TAG, "Location services connection failed with code " + connectionResult.getErrorCode());
         }
     }
 
@@ -322,13 +336,14 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         sb.append("Fuel level: ");
         sb.append(fuelLevel);
         sb.append("\n");
+        sb.append("Idletime: ");
         sb.append(idleTime);
         t.setText(sb.toString());
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.e(TAG, "LOCATION CHANGED MAIN");
+        Log.i(TAG, "LOCATION CHANGED MAIN");
         handleNewLocation(location);
     }
 

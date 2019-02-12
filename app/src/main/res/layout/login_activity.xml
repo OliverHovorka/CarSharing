@@ -57,6 +57,7 @@
         android:layout_x="0dp"
         android:layout_y="269dp"
         android:hint="E-Mail"
+        android:inputType="textWebEmailAddress"
         tools:layout_editor_absoluteX="3dp"
         tools:layout_editor_absoluteY="248dp" />
 
@@ -84,7 +85,7 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
         android:layout_marginStart="0dp"
-        android:layout_marginBottom="208dp"
+        android:layout_marginBottom="300dp"
         android:layout_x="4dp"
         android:layout_y="354dp"
         android:onClick="forgotPassword"
@@ -101,7 +102,7 @@
         android:layout_height="77dp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="113dp"
+        android:layout_marginBottom="150dp"
         android:layout_x="123dp"
         android:layout_y="407dp"
         android:background="@color/car2goBlue"

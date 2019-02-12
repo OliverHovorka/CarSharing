@@ -38,6 +38,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import at.ac.htlstp.carsharing.app.carsharingapp.R;
@@ -94,7 +95,7 @@ public class Main_drawer extends AppCompatActivity
                     return;
                 }
                 user = response.body();
-                Log.e(TAG,"User was loaded: " + user.toString());
+                Log.i(TAG,"User was loaded: " + user.toString());
             }
 
             @Override
@@ -163,7 +164,7 @@ public class Main_drawer extends AppCompatActivity
             }
         });
         gmap.moveCamera(CameraUpdateFactory.newLatLng(standort));
-        googleMap.setMinZoomPreference(9.0f);
+        googleMap.setMinZoomPreference(10.0f);
         googleMap.setMaxZoomPreference(50.0f);
 
     }
@@ -260,7 +261,25 @@ public class Main_drawer extends AppCompatActivity
         if (userMarker != null) {
             userMarker.remove();
         }
-        Log.d(TAG, location.toString());
+        UserClient userPos = GenericService.getClient(UserClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+        BigDecimal lat = new BigDecimal(location.getLatitude());
+        BigDecimal lng = new BigDecimal(location.getLongitude());
+        Call<Boolean> updateSucc = userPos.updateUserPosition(userID,lat,lng);
+        updateSucc.enqueue(new Callback<Boolean>() {
+            @Override
+            public void onResponse(Call<Boolean> call, Response<Boolean> response) {
+                if(response.body()) {
+                    Log.i(TAG, "Userposition update successful");
+                }else{
+                    Log.e(TAG,"Userposition update not accepted");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Boolean> call, Throwable t) {
+                Log.e(TAG,"Userposition update failed");
+            }
+        });
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
@@ -268,12 +287,12 @@ public class Main_drawer extends AppCompatActivity
                 .position(latLng)
                 .title("User")
                 .icon(BitmapDescriptorFactory.fromBitmap(smallMarkerPerson)));
-        Log.e(TAG, "New Marker Added MAIN DRAWER");
+        Log.i(TAG, "New Marker Added MAIN DRAWER");
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-        Log.i(TAG, "Location services suspended. Please reconnect.");
+        Log.e(TAG, "Location services suspended. Please reconnect.");
     }
 
     @Override
@@ -286,7 +305,7 @@ public class Main_drawer extends AppCompatActivity
                 e.printStackTrace();
             }
         } else {
-            Log.i(TAG, "Location services connection failed with code " + connectionResult.getErrorCode());
+            Log.e(TAG, "Location services connection failed with code " + connectionResult.getErrorCode());
         }
     }
 
@@ -297,13 +316,13 @@ public class Main_drawer extends AppCompatActivity
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.e(TAG, "LOCATION CHANGED MAIN");
+        Log.i(TAG, "LOCATION CHANGED MAIN");
         handleNewLocation(location);
     }
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        Log.e(TAG, "MARKER CLICKED");
+        Log.i(TAG, "MARKER CLICKED");
         if ("User".equals(marker.getTitle())) {
             Toast.makeText(this, "Can not navigate to user!", Toast.LENGTH_LONG).show();
             return false;

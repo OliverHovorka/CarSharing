@@ -90,7 +90,7 @@ public class Car implements Serializable {
 
     @Override
     public String toString() {
-        return "at.ac.htlstp.carsharing.server.model.Car[ vin=" + vin + " ]";
+        return "Vin: " + vin + " Model: " + model + " Platenumber: " + plateNumber + " Fueltype: " + fuelType;
     }
 
 }

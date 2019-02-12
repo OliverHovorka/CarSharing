@@ -49,6 +49,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Instant;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +60,7 @@ import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.JobClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.MyLocationListener;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.UserClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -109,7 +111,8 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                 curCar = response.body();
                 Long idletime = Instant.now().getMillis() - curCar.getCarCurrentPK().getTimestamp().getTime();
                 Date idle = new Date(idletime);
-                makeHeaderString(curCar.getCar().getModel(), curCar.getCar().getPlateNumber(), curCar.getCar().getFuelType().getType(), curCar.getFuelLevel() + "", idle.getHours() + "H " + idle.getMinutes() + "min");
+                makeHeaderString(curCar.getCar().getModel(), curCar.getCar().getPlateNumber(), curCar.getCar().getFuelType().getType(), curCar.getFuelLevel() + "",
+                        curCar.getHourDifference() + "H " + curCar.getMinuteDifference() + "min");
                 SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.mapViewCurTask);
                 mapFragment.getMapAsync(AssignCar.this);
@@ -177,8 +180,8 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                 .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
         //Marker mk = googleMap.addMarker(new MarkerOptions().position(wien).title("Wien").icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_car_fullsale)));
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(wien));
-        googleMap.setMinZoomPreference(7.0f);
-        googleMap.setMaxZoomPreference(60.0f);
+        googleMap.setMinZoomPreference(10.0f);
+        googleMap.setMaxZoomPreference(50.0f);
     }
 
     @Override
@@ -214,10 +217,22 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         if (userMarker != null) {
             userMarker.remove();
         }
-        Log.d(TAG, location.toString());
-        double currentLatitude = location.getLatitude();
-        double currentLongitude = location.getLongitude();
-        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+        UserClient userPos = GenericService.getClient(UserClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+        BigDecimal lat = new BigDecimal(location.getLatitude());
+        BigDecimal lng = new BigDecimal(location.getLongitude());
+        Call<Boolean> updateSucc = userPos.updateUserPosition(userID,lat,lng);
+        updateSucc.enqueue(new Callback<Boolean>() {
+            @Override
+            public void onResponse(Call<Boolean> call, Response<Boolean> response) {
+                Log.i(TAG,"Userposition update successful");
+            }
+
+            @Override
+            public void onFailure(Call<Boolean> call, Throwable t) {
+                Log.e(TAG,"Userposition update failed");
+            }
+        });
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
         if (gmap != null) {
             userMarker = gmap.addMarker(new MarkerOptions()
                     .position(latLng)
@@ -274,6 +289,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         sb.append("Fuel level: ");
         sb.append(fuelLevel);
         sb.append("\n");
+        sb.append("Idletime: ");
         sb.append(idleTime);
         t.setText(sb.toString());
     }
@@ -352,9 +368,13 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
             callJob.enqueue(new Callback<Boolean>() {
                 @Override
                 public void onResponse(Call<Boolean> call, Response<Boolean> response) {
-                    Log.e(TAG, "Job creation: uid:" + userID + " vin: " + vin);
-                    Log.i(TAG, "Job creation status: " + response.code());
-                    Log.i(TAG, "Job creation: " + response.body());
+                    if(response.body()) {
+                        Log.i(TAG, "Job creation: uid:" + userID + " vin: " + vin);
+                        Log.i(TAG, "Job creation status: " + response.code());
+                        Log.i(TAG, "Job creation: " + response.body());
+                    }else{
+                        Log.e(TAG,"Job creation rejected : " + response.code());
+                    }
                 }
 
                 @Override
@@ -374,6 +394,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
 
     public void setDestination(View v) {
         fixed = true;
+        Toast.makeText(this,"Destination set", Toast.LENGTH_LONG).show();
     }
 
 
