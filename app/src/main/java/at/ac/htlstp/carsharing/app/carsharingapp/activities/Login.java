@@ -16,8 +16,10 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import at.ac.htlstp.carsharing.app.carsharingapp.R;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.Job;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.User;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.JobClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.UserClient;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -59,13 +61,14 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
                     @Override
                     public void onResponse(Call<Boolean> call, Response<Boolean> response) {
                         if (response.body()) {
-                            final Intent i = new Intent(Login.this, Main_drawer.class);
+                            final Intent imain = new Intent(Login.this, Main_drawer.class);
+                            final Intent icur = new Intent(Login.this, CurTask.class);
                             UserClient uclient = GenericService.getClient(UserClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
                             Call<User> callUser = uclient.getUser(email);
                             callUser.enqueue(new Callback<User>() {
                                 @Override
                                 public void onResponse(Call<User> call, Response<User> response) {
-                                    User u = response.body();
+                                    final User u = response.body();
                                     if(u == null){
                                         Toast.makeText(Login.this,"User is null",Toast.LENGTH_LONG).show();
                                         return;
@@ -74,17 +77,41 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
                                         Toast.makeText(Login.this,"UserID is null",Toast.LENGTH_LONG).show();
                                         return;
                                     }
-                                    Log.e(TAG,"EMAIL: " + email + " USERID: " + u.getId());
-                                    i.putExtra("userID",u.getId());
-                                    Login.this.startActivity(i);
+                                    Log.i(TAG,"Login: EMAIL: " + email + " USERID: " + u.getId());
+                                    JobClient jclient = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+                                    Call<Job> callJob = jclient.getCurrentJobForUser(u.getId());
+                                    callJob.enqueue(new Callback<Job>() {
+                                        @Override
+                                        public void onResponse(Call<Job> call, Response<Job> response) {
+                                            Job j = response.body();
+                                            if(j != null){
+                                                Log.i(TAG,"User: " + u.getEmail() + " Job: " + j.getId());
+                                                icur.putExtra("userID",u.getId());
+                                                Login.this.startActivity(icur);
+                                            }else if(j == null){
+                                                Log.i(TAG,"User: " + u.getEmail() + " has no curjob");
+                                                imain.putExtra("userID",u.getId());
+                                                Login.this.startActivity(imain);
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<Job> call, Throwable t) {
+                                            Log.e(TAG,"Job fetch call failed: " + t.getMessage());
+                                            imain.putExtra("userID",u.getId());
+                                            Login.this.startActivity(imain);
+                                        }
+                                    });
+
                                 }
 
                                 @Override
                                 public void onFailure(Call<User> call, Throwable t) {
-
+                                    Log.e(TAG,"User could not be fetched: " + t.getMessage());
                                 }
                             });
                         } else {
+                            Log.e(TAG,"Username or password incorrect");
                             Toast.makeText(Login.this, "Username or password is incorrect!", Toast.LENGTH_LONG).show();
                         }
                     }

@@ -178,7 +178,6 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                 .position(pos)
                 .title(curCar.getCar().getVin())
                 .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
-        //Marker mk = googleMap.addMarker(new MarkerOptions().position(wien).title("Wien").icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_car_fullsale)));
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(wien));
         googleMap.setMinZoomPreference(10.0f);
         googleMap.setMaxZoomPreference(50.0f);
@@ -364,10 +363,11 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         if(dest!=null) {
             Intent i = new Intent(this, CurTask.class);
             JobClient jclient = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
-            Call<Boolean> callJob = jclient.createJob(userID, vin);
+            Call<Boolean> callJob = jclient.createJob(userID, vin, dest.lat,dest.lng);
             callJob.enqueue(new Callback<Boolean>() {
                 @Override
                 public void onResponse(Call<Boolean> call, Response<Boolean> response) {
+                    Log.e(TAG,"Job creation status: " + response.code());
                     if(response.body()) {
                         Log.i(TAG, "Job creation: uid:" + userID + " vin: " + vin);
                         Log.i(TAG, "Job creation status: " + response.code());
@@ -382,19 +382,22 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                     Log.e(TAG,"Job creation failed");
                 }
             });
-            i.putExtra("carVin", vin);
             i.putExtra("userID", userID);
-            i.putExtra("destLatitude", dest.lat);
-            i.putExtra("destLongitude",dest.lng);
             this.startActivity(i);
         }else{
-            Toast.makeText(this,"Keine Destination gestzt",Toast.LENGTH_LONG).show();
+            Toast.makeText(this,"No destination set",Toast.LENGTH_LONG).show();
         }
     }
 
     public void setDestination(View v) {
-        fixed = true;
-        Toast.makeText(this,"Destination set", Toast.LENGTH_LONG).show();
+        if(dest == null){
+            Toast.makeText(this,"No destination set",Toast.LENGTH_LONG).show();
+        }else if(fixed){
+            Toast.makeText(this,"Destination already set",Toast.LENGTH_LONG).show();
+        } else {
+            fixed = true;
+            Toast.makeText(this, "Destination set", Toast.LENGTH_LONG).show();
+        }
     }
 
 
@@ -412,6 +415,8 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                         .icon(BitmapDescriptorFactory.fromBitmap(destIcon)));
                 makeRoutewithDest();
             }
+        }else{
+            Toast.makeText(this,"Destination already set",Toast.LENGTH_LONG).show();
         }
     }
 }

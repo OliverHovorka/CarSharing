@@ -8,6 +8,7 @@ package at.ac.htlstp.carsharing.app.carsharingapp.model;
 import java.io.Serializable;
 import java.util.Date;
 
+
 /**
  *
  * @author Heinzl
@@ -16,11 +17,14 @@ import java.util.Date;
 public class Job implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     private Integer id;
     private Date startTime;
     private Date endTime;
     private Car vin;
     private User uid;
+    private double destLat;
+    private double destLng;
 
     public Job() {
     }
@@ -67,6 +71,22 @@ public class Job implements Serializable {
 
     public void setUid(User uid) {
         this.uid = uid;
+    }
+
+    public double getDestLat() {
+        return destLat;
+    }
+
+    public void setDestLat(double destLat) {
+        this.destLat = destLat;
+    }
+
+    public double getDestLng() {
+        return destLng;
+    }
+
+    public void setDestLng(double destLng) {
+        this.destLng = destLng;
     }
 
     @Override

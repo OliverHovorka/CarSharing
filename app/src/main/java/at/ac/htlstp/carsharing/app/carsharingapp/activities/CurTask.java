@@ -56,9 +56,12 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import at.ac.htlstp.carsharing.app.carsharingapp.R;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.Car;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.Job;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.JobClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.MyLocationListener;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.UserClient;
 import retrofit2.Call;
@@ -69,7 +72,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         GoogleApiClient.OnConnectionFailedListener {
 
     private GoogleApiClient mGoogleApiClient;
-    public static final String TAG = Main_drawer.class.getSimpleName();
+    public static final String TAG = CurTask.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private LocationRequest mLocationRequest;
     private static Bitmap smallMarkerPerson;
@@ -77,12 +80,12 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     private static Marker userMarker;
     private static Marker carMarker;
     private static Marker destMarker;
-    private static CarCurrent curCar;
+    private static Car car = null;
+    private static CarCurrent curCar = null;
     private static Polyline poly;
     private static LocationManager mLocationManager;
     private int userID;
-    private LatLng dest;
-
+    private static Job curJob = null;
 
     @SuppressLint({"MissingPermission", "NewApi"})
     @Override
@@ -106,41 +109,63 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
 
         Intent i = getIntent();
         userID = i.getIntExtra("userID", -1);
-        //TEMPORÄR
-        double lat = i.getDoubleExtra("destLatitude", -1);
-        double lng = i.getDoubleExtra("destLongitude", -1);
-        dest = new LatLng(lat, lng);
-        //
         if (userID == -1) {
+            Log.e(TAG,"Userid could not be fetched");
             Toast.makeText(CurTask.this, "USERID could not be tranferred", Toast.LENGTH_LONG).show();
         }
         String vin = i.getStringExtra("carVin");
 
-        if (!"noJob".equals(vin)) {
-            CarClient client = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
-            Call<CarCurrent> carCall = client.getCar(vin);
-            carCall.enqueue(new Callback<CarCurrent>() {
-                @Override
-                public void onResponse(Call<CarCurrent> call, Response<CarCurrent> response) {
-                    curCar = response.body();
-                    Long idletime = Instant.now().getMillis() - curCar.getCarCurrentPK().getTimestamp().getTime();
-                    Date idle = new Date(idletime);
-                    makeHeaderString(curCar.getCar().getModel(), curCar.getCar().getPlateNumber(), curCar.getCar().getFuelType().getType(), curCar.getFuelLevel() + "",
-                            curCar.getHourDifference() + "H " + curCar.getMinuteDifference() + "min");
-                    SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                            .findFragmentById(R.id.mapViewCurTask);
-                    mapFragment.getMapAsync(CurTask.this);
-                }
+        JobClient jclient = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+        Call<Job> callJob = jclient.getCurrentJobForUser(userID);
+        callJob.enqueue(new Callback<Job>() {
+            @Override
+            public void onResponse(Call<Job> call, Response<Job> response) {
+                Job j = response.body();
+                if(j != null){
+                    Log.i(TAG,"CurJob: " + j.getId());
+                    curJob = j;
+                    car = curJob.getVin();
+                    CarClient cclient = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+                    Call<CarCurrent> carCall = cclient.getCar(car.getVin());
+                    carCall.enqueue(new Callback<CarCurrent>() {
+                        @Override
+                        public void onResponse(Call<CarCurrent> call, Response<CarCurrent> response) {
+                            CarCurrent cc = response.body();
+                            if(cc != null){
+                                curCar = cc;
+                                SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                                        .findFragmentById(R.id.mapViewCurTask);
+                                mapFragment.getMapAsync(CurTask.this);
+                                makeHeaderString(curCar.getCar().getModel(), curCar.getCar().getPlateNumber(), curCar.getCar().getFuelType().getType(), curCar.getFuelLevel() + "",
+                                        curCar.getHourDifference() + "H " + curCar.getMinuteDifference() + "min");
+                                Log.i(TAG,"CurCar:" + curCar.getCar().getVin());
+                            }else{
+                                Log.e(TAG,"CurCar couldnt be fetched: " + response.code());
+                            }
+                        }
 
-                @Override
-                public void onFailure(Call<CarCurrent> call, Throwable t) {
-                    Log.e(TAG, "CarCall in AssignCar failed");
+                        @Override
+                        public void onFailure(Call<CarCurrent> call, Throwable t) {
+                            Log.e(TAG,"CurCar call failed: " + t.getMessage());
+                        }
+                    });
+                }else{
+                    Log.e(TAG,"Job fetch failed: " + response.code());
                 }
-            });
+            }
+
+            @Override
+            public void onFailure(Call<Job> call, Throwable t) {
+                Log.e(TAG,"Job fetch failed: " + t.getMessage());
+            }
+        });
+
+
 
             /*-------------------- Location Listener ---------------------------*/
             // The minimum time (in miliseconds) the system will wait until checking if the location changed
             int minTime = 1000;
+            // The minimum distance (in meters) traveled until you will be notified
             // The minimum distance (in meters) traveled until you will be notified
             float minDistance = 5;
             // Create a new instance of the location listener
@@ -160,11 +185,6 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
             BitmapDrawable bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(getResources(), R.drawable.person_marker, null);
             Bitmap b = bitmapdraw.getBitmap();
             smallMarkerPerson = Bitmap.createScaledBitmap(b, 200, 200, false);
-        } else {
-            Toast.makeText(this, "No Car assigned!", Toast.LENGTH_LONG).show();
-            Intent it = new Intent(this, Main_drawer.class);
-            this.startActivity(it);
-        }
     }
 
     @Override
@@ -176,7 +196,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         Bitmap b = bitmapdraw.getBitmap();
         Bitmap smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
         LatLng pos = new LatLng(curCar.getLat().doubleValue(), curCar.getLng().doubleValue());
-
+        LatLng dest = new LatLng(curJob.getDestLat(),curJob.getDestLng());
         carMarker = googleMap.addMarker(new MarkerOptions()
                 .position(pos)
                 .title(curCar.getCar().getVin())
@@ -294,16 +314,18 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         DateTime now = new DateTime();
         try {
             com.google.maps.model.LatLng userloc = new com.google.maps.model.LatLng(userMarker.getPosition().latitude, userMarker.getPosition().longitude);
-            com.google.maps.model.LatLng carPos = new com.google.maps.model.LatLng(carMarker.getPosition().latitude, carMarker.getPosition().longitude);
+            com.google.maps.model.LatLng carPos = new com.google.maps.model.LatLng(curCar.getLat().doubleValue(),curCar.getLng().doubleValue());
             DirectionsResult result = DirectionsApi.newRequest(getGeoContext())
                     .mode(TravelMode.DRIVING).origin(userloc)
                     .destination(carPos).departureTime(now)
                     .await();
-            com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(dest.latitude, dest.longitude);
+
+            com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(curJob.getDestLat(), curJob.getDestLng());
             DirectionsResult result2 = DirectionsApi.newRequest(getGeoContext())
                     .mode(TravelMode.DRIVING).origin(carPos)
                     .destination(destination).departureTime(now)
                     .await();
+
             addPolyline(result);
             addPolyline(result2);
         } catch (ApiException e) {
@@ -350,7 +372,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     public void redirectMaps(View v) {
         Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=" + userMarker.getPosition().latitude + "," + userMarker.getPosition().longitude +
                 "&destination=" + carMarker.getPosition().latitude + "," + carMarker.getPosition().longitude +
-                "&waypoints=" + dest.latitude + "," + dest.longitude + "&travelmode=driving");
+                "&waypoints=" + curJob.getDestLat() + "," + curJob.getDestLng() + "&travelmode=driving");
         Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
         mapIntent.setPackage("com.google.android.apps.maps");
         if (mapIntent.resolveActivity(getPackageManager()) != null) {

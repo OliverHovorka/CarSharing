@@ -5,7 +5,6 @@
  */
 package at.ac.htlstp.carsharing.app.carsharingapp.service;
 
-
 import java.util.List;
 
 import at.ac.htlstp.carsharing.app.carsharingapp.model.Job;
@@ -30,8 +29,8 @@ public interface JobClient {
     @GET("job/current/{userId}")
     Call<Job> getCurrentJobForUser(@Path("userId") int id);
 
-    @POST("job/create/{userId}/{vin}")
-    Call<Boolean> createJob(@Path("userId") int uid, @Path("vin") String vin);
+    @POST("job/create/{userId}/{vin}/{destlat}/{destlng}")
+    Call<Boolean> createJob(@Path("userId") int uid, @Path("vin") String vin, @Path("destlat") double destLat, @Path("destlng") double destLng);
 
     @POST("job/finish/{jobId}")
     Call<Boolean> finishJob(@Path("jobId") int jid);
