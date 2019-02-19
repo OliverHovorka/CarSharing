@@ -7,6 +7,7 @@ package at.ac.htlstp.carsharing.app.carsharingapp.model;
 
 import java.io.Serializable;
 
+
 /**
  *
  * @author Heinzl
@@ -15,6 +16,7 @@ import java.io.Serializable;
 public class Car implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     private String vin;
     private String model;
     private String plateNumber;
@@ -90,7 +92,7 @@ public class Car implements Serializable {
 
     @Override
     public String toString() {
-        return "Vin: " + vin + " Model: " + model + " Platenumber: " + plateNumber + " Fueltype: " + fuelType;
+        return "at.ac.htlstp.carsharing.server.model.Car[ vin=" + vin + " ]";
     }
 
 }

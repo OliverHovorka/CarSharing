@@ -82,7 +82,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     private static Marker destMarker;
     private static Car car = null;
     private static CarCurrent curCar = null;
-    private static Polyline poly;
+    private static Polyline[] polys = new Polyline[0];
     private static LocationManager mLocationManager;
     private int userID;
     private static Job curJob = null;
@@ -326,8 +326,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                     .destination(destination).departureTime(now)
                     .await();
 
-            addPolyline(result);
-            addPolyline(result2);
+            addPolyline(result, result2);
         } catch (ApiException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -337,9 +336,18 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         }
     }
 
-    private void addPolyline(DirectionsResult results) {
-        List<LatLng> decodedPath = PolyUtil.decode(results.routes[0].overviewPolyline.getEncodedPath());
-        poly = gmap.addPolyline(new PolylineOptions().addAll(decodedPath).color(Color.rgb(0,158,224)));
+    private void addPolyline(DirectionsResult... results) {
+        for(Polyline p: polys){
+            p.remove();
+        }
+
+        polys = new Polyline[results.length];
+        for(int i = 0; i < results.length; i++){
+            List<LatLng> decodedPath = PolyUtil.decode(results[i].routes[0].overviewPolyline.getEncodedPath());
+            polys[i] = gmap.addPolyline(new PolylineOptions().addAll(decodedPath).color(Color.rgb(0,158,224)));
+        }
+
+
     }
 
     public void makeHeaderString(String car, String plateNumber, String fuelType, String fuelLevel, String idleTime) {
@@ -365,7 +373,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.i(TAG, "LOCATION CHANGED MAIN");
+        Log.i(TAG, "LOCATION CHANGED CURTASK");
         handleNewLocation(location);
     }
 

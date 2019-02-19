@@ -68,7 +68,7 @@ import retrofit2.Response;
 public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, LocationListener,
         GoogleApiClient.OnConnectionFailedListener,GoogleMap.OnMapLongClickListener {
     private GoogleApiClient mGoogleApiClient;
-    public static final String TAG = Main_drawer.class.getSimpleName();
+    public static final String TAG = AssignCar.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private LocationRequest mLocationRequest;
     private static Bitmap smallMarkerPerson;

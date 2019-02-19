@@ -8,12 +8,10 @@ package at.ac.htlstp.carsharing.app.carsharingapp.model;
 import java.io.Serializable;
 import java.util.Date;
 
-
 /**
  *
  * @author Heinzl
  */
-
 public class Job implements Serializable {
 
     private static final long serialVersionUID = 1L;

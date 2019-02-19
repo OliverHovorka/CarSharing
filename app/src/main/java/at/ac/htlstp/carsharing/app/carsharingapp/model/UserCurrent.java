@@ -8,15 +8,14 @@ package at.ac.htlstp.carsharing.app.carsharingapp.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
-
 /**
  *
  * @author Heinzl
  */
-
 public class UserCurrent implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     protected UserCurrentPK userCurrentPK;
     private BigDecimal lat;
     private BigDecimal lng;

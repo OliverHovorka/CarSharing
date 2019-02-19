@@ -5,7 +5,6 @@
  */
 package at.ac.htlstp.carsharing.app.carsharingapp.service;
 
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -47,13 +46,25 @@ public interface UserClient {
     @POST("user/create/")
     Call<Boolean> createUser(User u);
 
-    @POST("user/updatePw/{userId}/{pwd}")
-    Call<Boolean> updateUserPassword(@Path("userId") int userId, @Path("pwd") String newPwd);
+    @POST("user/updatePw/{url}/{pwd}")
+    Call<Boolean> updateUserPassword(@Path("url") String url, @Path("pwd") String newPwd);
+
+    @POST("user/updatePwNoReset/{userId}/{pwd}")
+    Call<Boolean> updateUserPasswordWithoutReset(@Path("userId") int userId, @Path("pwd") String newPwd);
+
+    @POST("user/initReset/{email}")
+    Call<Boolean> initReset(@Path("email") String email);
+
+    @POST("user/updateEmail/{userId}/{newEmail}")
+    Call<Boolean> updateEmail(@Path("userId") int userId, @Path("newEmail") String newEmail);
 
     @POST("user/updateLoc/{userId}/{lat}/{lng}")
     Call<Boolean> updateUserPosition(@Path("userId") int userId, @Path("lat") BigDecimal lat, @Path("lng") BigDecimal lng);
 
     @POST("user/updateActivated/{userId}/{activated}")
     Call<Boolean> updateUserActivated(@Path("userId") int userId, @Path("activated") boolean activated);
+
+    @GET("user/available")
+    Call<List<UserCurrent>> getAvailableUsers();
 
 }

@@ -11,10 +11,10 @@ import java.io.Serializable;
  *
  * @author Heinzl
  */
-
 public class Location implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     private Integer id;
     private String name;
     private String country;

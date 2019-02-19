@@ -5,6 +5,7 @@
  */
 package at.ac.htlstp.carsharing.app.carsharingapp.service;
 
+
 import java.util.List;
 
 import at.ac.htlstp.carsharing.app.carsharingapp.model.Job;
@@ -20,7 +21,7 @@ import retrofit2.http.Path;
  */
 public interface JobClient {
 
-    @GET("job/{userId}")
+    @GET("job{userId}")
     Call<List<Job>> getJobsForUser(@Path("userId") int id);
 
     @GET("job/finished/{userId}")

@@ -17,7 +17,7 @@ import retrofit2.http.Path;
  */
 public interface SettingsClient {
 
-    @GET("setings/{key}")
+    @GET("settings/{key}")
     Call<String> getValue(@Path("key") String settingsKey);
 
     @POST("settings/{key}/{value}")

@@ -6,14 +6,15 @@
 package at.ac.htlstp.carsharing.app.carsharingapp.model;
 
 import java.io.Serializable;
+
 /**
  *
  * @author Heinzl
  */
-
 public class Systemsettings implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     private String key;
     private String value;
 

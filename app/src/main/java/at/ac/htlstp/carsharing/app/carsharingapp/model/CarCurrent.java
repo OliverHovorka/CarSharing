@@ -13,10 +13,10 @@ import java.util.Date;
  *
  * @author Heinzl
  */
-
 public class CarCurrent implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     protected CarCurrentPK carCurrentPK;
     private Integer fuelLevel;
     private BigDecimal lat;
@@ -93,7 +93,6 @@ public class CarCurrent implements Serializable {
         return (seconds % 3_600) / 60;
     }
 
-
     @Override
     public int hashCode() {
         int hash = 0;
@@ -116,7 +115,7 @@ public class CarCurrent implements Serializable {
 
     @Override
     public String toString() {
-        return "Vin: " + car.getVin() + " Model: " + car.getModel() + "\n Platenumber: " + car.getPlateNumber() + " Fueltype: " + car.getFuelType().getType();
+        return "at.ac.htlstp.carsharing.server.model.CarCurrent[ carCurrentPK=" + carCurrentPK + " ]";
     }
 
 }

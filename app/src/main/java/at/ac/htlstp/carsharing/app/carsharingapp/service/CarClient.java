@@ -5,7 +5,6 @@
  */
 package at.ac.htlstp.carsharing.app.carsharingapp.service;
 
-
 import java.util.List;
 
 import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
@@ -19,7 +18,7 @@ import retrofit2.http.Path;
  * @author Heinzl
  */
 public interface CarClient {
-    
+
     @GET("car")
     Call<List<CarCurrent>> getCars();
 

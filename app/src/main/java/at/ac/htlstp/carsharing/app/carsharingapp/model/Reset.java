@@ -15,6 +15,7 @@ import java.util.Date;
 public class Reset implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     private String url;
     private Date timestamp;
     private String email;
