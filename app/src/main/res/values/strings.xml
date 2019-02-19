@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">CarSharing_Template_v1</string>
     <string name="forgotPass"><u>Forgot Passsword?</u></string>
+
     <string name="google_maps_key">AIzaSyCktxoF4cOvmITlfJi3g_VvzZT5OWNc5yc</string>
     <string name="title_activity_main_drawer">Overview</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>

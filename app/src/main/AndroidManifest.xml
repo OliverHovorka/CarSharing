@@ -20,7 +20,7 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name=".Login"
+            android:name=".activities.Login"
             android:theme="@style/generalnotitle">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,14 +29,14 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".Main_drawer"
+            android:name=".activities.Main_drawer"
             android:label="@string/title_activity_main_drawer"
             android:theme="@style/generalnotitle.NoActionBar"/>
-        <activity android:name=".CurTask"
+        <activity android:name=".activities.CurTask"
             android:theme="@style/generalnotitle.NoActionBar"/>
-        <activity android:name=".AssignCar"
+        <activity android:name=".activities.AssignCar"
             android:theme="@style/generalnotitle.NoActionBar"/>
-        <activity android:name=".ShowCars"
+        <activity android:name=".activities.ShowCars"
             android:theme="@style/generalnotitle.NoActionBar"/>
     </application>
 
