@@ -282,6 +282,10 @@ public class Main_drawer extends AppCompatActivity
     }
 
     private void handleNewLocation(Location location) {
+        if(gmap == null){
+            Log.e(TAG,"GOOGLEMAP IS NULL HANDLENEWLOC");
+            return;
+        }
         if (userMarker != null) {
             userMarker.remove();
         }

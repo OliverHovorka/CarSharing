@@ -23,10 +23,10 @@ public class Application extends android.app.Application {
             @Override
             public void onComplete(@NonNull Task<InstanceIdResult> task) {
                 if (!task.isSuccessful()) {
-                    Log.e(TAG, "FirebaseException");
+                    Log.e(TAG, "FIRE FirebaseException");
                 } else {
                     String token = task.getResult().getToken();
-                    Log.e(TAG, "TOKEN: " + token);
+                    Log.e(TAG, "FIRE TOKEN: " + token);
                 }
             }
         });
