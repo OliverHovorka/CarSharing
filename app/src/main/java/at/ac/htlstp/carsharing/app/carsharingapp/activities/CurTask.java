@@ -1,9 +1,11 @@
 package at.ac.htlstp.carsharing.app.carsharingapp.activities;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
@@ -104,7 +106,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
 
         mLocationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setInterval(10 * 1000)        // 10 seconds, in milliseconds
+                .setInterval(5 * 1000)        // 10 seconds, in milliseconds
                 .setFastestInterval(1 * 1000); // 1 second, in milliseconds
 
         Intent i = getIntent();
@@ -113,7 +115,10 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
             Log.e(TAG,"Userid could not be fetched");
             Toast.makeText(CurTask.this, "USERID could not be tranferred", Toast.LENGTH_LONG).show();
         }
-        String vin = i.getStringExtra("carVin");
+
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.mapViewCurTask);
+        mapFragment.getMapAsync(CurTask.this);
 
         JobClient jclient = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
         Call<Job> callJob = jclient.getCurrentJobForUser(userID);
@@ -124,6 +129,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                 if(j != null){
                     Log.i(TAG,"CurJob: " + j.getId());
                     curJob = j;
+
                     car = curJob.getVin();
                     CarClient cclient = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
                     Call<CarCurrent> carCall = cclient.getCar(car.getVin());
@@ -133,9 +139,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                             CarCurrent cc = response.body();
                             if(cc != null){
                                 curCar = cc;
-                                SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                                        .findFragmentById(R.id.mapViewCurTask);
-                                mapFragment.getMapAsync(CurTask.this);
+                                setUpMarkers();
                                 makeHeaderString(curCar.getCar().getModel(), curCar.getCar().getPlateNumber(), curCar.getCar().getFuelType().getType(), curCar.getFuelLevel() + "",
                                         curCar.getHourDifference() + "H " + curCar.getMinuteDifference() + "min");
                                 Log.i(TAG,"CurCar:" + curCar.getCar().getVin());
@@ -192,28 +196,36 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         gmap = googleMap;
         googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
         LatLng wien = new LatLng(48.241696, 16.372928);
-        BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.car_marker);
-        Bitmap b = bitmapdraw.getBitmap();
-        Bitmap smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
-        LatLng pos = new LatLng(curCar.getLat().doubleValue(), curCar.getLng().doubleValue());
-        LatLng dest = new LatLng(curJob.getDestLat(),curJob.getDestLng());
-        carMarker = googleMap.addMarker(new MarkerOptions()
-                .position(pos)
-                .title(curCar.getCar().getVin())
-                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
-
-        bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.dest_marker);
-        b = bitmapdraw.getBitmap();
-        smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
-
-        destMarker = googleMap.addMarker(new MarkerOptions()
-                .position(dest)
-                .title("Destination")
-                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
-
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(wien));
         googleMap.setMinZoomPreference(10.0f);
         googleMap.setMaxZoomPreference(50.0f);
+    }
+
+    public void setUpMarkers(){
+        BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.car_marker);
+        Bitmap b = bitmapdraw.getBitmap();
+        Bitmap smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
+        LatLng wien = new LatLng(48.241696, 16.372928);
+        LatLng pos = new LatLng(curCar.getLat().doubleValue(), curCar.getLng().doubleValue());
+        LatLng dest = new LatLng(curJob.getDestLat(),curJob.getDestLng());
+        if(gmap != null) {
+            carMarker = gmap.addMarker(new MarkerOptions()
+                    .position(pos)
+                    .title(curCar.getCar().getVin())
+                    .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
+        }
+        bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.dest_marker);
+        b = bitmapdraw.getBitmap();
+        smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
+        if(gmap != null) {
+            destMarker = gmap.addMarker(new MarkerOptions()
+                    .position(dest)
+                    .title("Destination")
+                    .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
+        }
+        if(carMarker != null && destMarker != null && userMarker != null){
+            makeRoute();
+        }
     }
 
     @Override
@@ -236,16 +248,19 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     @SuppressWarnings("")
     public void onConnected(@Nullable Bundle bundle) {
         Log.i(TAG, "Location services connected.");
-        Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (location == null) {
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            if (location == null) {
+                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+            } else {
+                handleNewLocation(location);
+            }
         } else {
-            handleNewLocation(location);
+
         }
     }
 
     public void handleNewLocation(Location location) {
-        Log.i(TAG, "Handle New Location CurTask");
         if (userMarker != null) {
             userMarker.remove();
         }
@@ -256,7 +271,11 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         updateSucc.enqueue(new Callback<Boolean>() {
             @Override
             public void onResponse(Call<Boolean> call, Response<Boolean> response) {
-                Log.i(TAG,"Userposition update successful");
+                if(response.body()) {
+                    Log.i(TAG, "Userposition update successful");
+                }else{
+                    Log.e(TAG,"Userposition update not accepted");
+                }
             }
 
             @Override
@@ -264,15 +283,17 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                 Log.e(TAG,"Userposition update failed");
             }
         });
-        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-
-        if (gmap != null) {
+        double currentLatitude = location.getLatitude();
+        double currentLongitude = location.getLongitude();
+        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+        if(gmap != null) {
             userMarker = gmap.addMarker(new MarkerOptions()
                     .position(latLng)
                     .title("User")
                     .icon(BitmapDescriptorFactory.fromBitmap(smallMarkerPerson)));
-            Log.i(TAG, "New Marker Added CURTASK");
-            makeRoute();
+            Log.i(TAG, "New Marker Added CurTask");
+        }else{
+            Log.e(TAG,"Googlemap not loaded yet");
         }
     }
 

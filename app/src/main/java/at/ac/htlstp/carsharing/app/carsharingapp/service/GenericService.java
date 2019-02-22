@@ -26,6 +26,7 @@ public class GenericService {
 
     private static final Map<Class<?>, Object> CLIENT_CACHE = new HashMap<>();
 
+
     public static <T> T getClient(Class<T> cls, final String key) {
         synchronized (CLIENT_CACHE) {
             if (CLIENT_CACHE.containsKey(cls)) {
@@ -33,7 +34,7 @@ public class GenericService {
             }
         }
 
-        String API_BASE_URL = "https://wildefliege.privatevoid.net/server/rest/";
+        String API_BASE_URL = "https://carsharing.privatevoid.net/server/rest/";
         Gson gson = new GsonBuilder().setLenient().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
         
         OkHttpClient okClient = new OkHttpClient.Builder().addInterceptor(new Interceptor() {

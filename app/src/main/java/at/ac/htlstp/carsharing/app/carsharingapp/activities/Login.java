@@ -16,6 +16,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import at.ac.htlstp.carsharing.app.carsharingapp.R;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.AndroidLogin;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.Job;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.User;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
@@ -25,7 +26,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class Login extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback{
+public class Login extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     public static final String TAG = Login.class.getSimpleName();
 
@@ -35,19 +36,18 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         getSupportActionBar().hide();
         setContentView(R.layout.login_activity);
-
     }
 
-    public void forgotPassword(View v){
-        Toast.makeText(this, "Redirecting to Passwordreset!",Toast.LENGTH_LONG).show();
-        String url = "http://get.privatevoid.net";
+    public void forgotPassword(View v) {
+        Toast.makeText(this, "Redirecting to Passwordreset!", Toast.LENGTH_LONG).show();
+        String url = "http://carsharing.privatevoid.net/webseite/faces/resetpwd.xhtml";
         Intent i = new Intent(Intent.ACTION_VIEW);
         i.setData(Uri.parse(url));
         startActivity(i);
     }
 
-    public void redirectLogin(View v){
-        if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+    public void redirectLogin(View v) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             UserClient loginClient = GenericService.getClient(UserClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
             EditText emailEdit = (EditText) findViewById(R.id.email_input);
             EditText passwordEdit = (EditText) findViewById(R.id.password_input);
@@ -56,97 +56,60 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
             if (email.matches("") || password.matches("")) {
                 Toast.makeText(Login.this, "Username or password is empty!", Toast.LENGTH_LONG).show();
             } else {
-                Call<Boolean> loginCall = loginClient.checkLogin(email, password);
-                loginCall.enqueue(new Callback<Boolean>() {
+                Call<AndroidLogin> loginCall = loginClient.checkAndroidLogin(email, password);
+                loginCall.enqueue(new Callback<AndroidLogin>() {
                     @Override
-                    public void onResponse(Call<Boolean> call, Response<Boolean> response) {
-                        if (response.body()) {
-                            final Intent imain = new Intent(Login.this, Main_drawer.class);
-                            final Intent icur = new Intent(Login.this, CurTask.class);
-                            UserClient uclient = GenericService.getClient(UserClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
-                            Call<User> callUser = uclient.getUser(email);
-                            callUser.enqueue(new Callback<User>() {
-                                @Override
-                                public void onResponse(Call<User> call, Response<User> response) {
-                                    final User u = response.body();
-                                    if(u == null){
-                                        Toast.makeText(Login.this,"User is null",Toast.LENGTH_LONG).show();
-                                        return;
-                                    }
-                                    if(u.getId() == null){
-                                        Toast.makeText(Login.this,"UserID is null",Toast.LENGTH_LONG).show();
-                                        return;
-                                    }
-                                    Log.i(TAG,"Login: EMAIL: " + email + " USERID: " + u.getId());
-                                    JobClient jclient = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
-                                    Call<Job> callJob = jclient.getCurrentJobForUser(u.getId());
-                                    callJob.enqueue(new Callback<Job>() {
-                                        @Override
-                                        public void onResponse(Call<Job> call, Response<Job> response) {
-                                            Job j = response.body();
-                                            if(j != null){
-                                                Log.i(TAG,"User: " + u.getEmail() + " Job: " + j.getId());
-                                                icur.putExtra("userID",u.getId());
-                                                Login.this.startActivity(icur);
-                                            }else if(j == null){
-                                                Log.i(TAG,"User: " + u.getEmail() + " has no curjob");
-                                                imain.putExtra("userID",u.getId());
-                                                Login.this.startActivity(imain);
-                                            }
-                                        }
-
-                                        @Override
-                                        public void onFailure(Call<Job> call, Throwable t) {
-                                            Log.e(TAG,"Job fetch call failed: " + t.getMessage());
-                                            imain.putExtra("userID",u.getId());
-                                            Login.this.startActivity(imain);
-                                        }
-                                    });
-
+                    public void onResponse(Call<AndroidLogin> call, Response<AndroidLogin> response) {
+                        if (response.body() != null) {
+                            AndroidLogin log = response.body();
+                            if(log.isSuccessful()) {
+                                Job curJ = log.getCurrentJob();
+                                User u = log.getUser();
+                                if (curJ == null) {
+                                    Log.i(TAG, "User: " + u.getEmail() + " has no curjob");
+                                    Intent imain = new Intent(Login.this, Main_drawer.class);
+                                    imain.putExtra("userID", u.getId());
+                                    Login.this.startActivity(imain);
+                                } else {
+                                    Intent icur = new Intent(Login.this, CurTask.class);
+                                    Log.i(TAG, "User: " + u.getEmail() + " Job: " + curJ.getId());
+                                    icur.putExtra("userID", u.getId());
+                                    Login.this.startActivity(icur);
                                 }
+                            }else{
+                                Toast.makeText(Login.this, "Email or password incorrect!", Toast.LENGTH_LONG).show();
+                                return;
+                            }
 
-                                @Override
-                                public void onFailure(Call<User> call, Throwable t) {
-                                    Log.e(TAG,"User could not be fetched: " + t.getMessage());
-                                }
-                            });
                         } else {
-                            Log.e(TAG,"Username or password incorrect");
-                            Toast.makeText(Login.this, "Username or password is incorrect!", Toast.LENGTH_LONG).show();
+                            Log.e(TAG, "LoginCall exception: " + response.code());
                         }
                     }
 
                     @Override
-                    public void onFailure(Call<Boolean> call, Throwable t) {
-                        Log.e(TAG, "Login call failed");
-                        Toast.makeText(Login.this, "Connection not possible!", Toast.LENGTH_LONG).show();
+                    public void onFailure(Call<AndroidLogin> call, Throwable t) {
+                        Log.e(TAG, "LoginCall failed: " + t.getMessage());
                     }
                 });
             }
-        }else{
-            String[] perm = {Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.INTERNET};
-            requestPermissions(perm,1);
         }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         boolean permGranted = false;
-        if(requestCode == 1){
-            for(int i = 0;i < 2;i++){
-                if(grantResults[i] == PackageManager.PERMISSION_DENIED){
+        if (requestCode == 1) {
+            for (int i = 0; i < 2; i++) {
+                if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
                     permGranted = true;
                 }
 
             }
         }
-        if(permGranted){
-           Toast.makeText(this,"The Location and Internet permission must be granted!",Toast.LENGTH_LONG).show();
+        if (permGranted) {
+            Toast.makeText(this, "The Location and Internet permission must be granted!", Toast.LENGTH_LONG).show();
         }
     }
 
-    /*public void redirectLogin(View v){
-        Intent i = new Intent(this, Main_drawer.class);
-        Login.this.startActivity(i);
-    }*/
 }

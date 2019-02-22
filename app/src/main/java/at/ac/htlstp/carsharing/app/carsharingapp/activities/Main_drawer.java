@@ -29,6 +29,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -37,6 +38,12 @@ import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.messaging.RemoteMessage;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -77,6 +84,19 @@ public class Main_drawer extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        FirebaseApp.initializeApp(this);
+        FirebaseInstanceId.getInstance().getInstanceId().addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+            @Override
+            public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                if(!task.isSuccessful()){
+                    Log.e(TAG,"FirebaseException");
+                }else{
+                    String token = task.getResult().getToken();
+                    Log.e(TAG,"TOKEN: " + token);
+                }
+            }
+        });
+
         Intent logI = getIntent();
         userID = logI.getIntExtra("userID",-1);
         if(userID == -1){
@@ -113,12 +133,8 @@ public class Main_drawer extends AppCompatActivity
 
         mLocationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setInterval(10 * 1000)        // 10 seconds, in milliseconds
+                .setInterval(5 * 1000)        // 10 seconds, in milliseconds
                 .setFastestInterval(1 * 1000); // 1 second, in milliseconds
-
-        BitmapDrawable bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(getResources(), R.drawable.person_marker, null);
-        Bitmap b = bitmapdraw.getBitmap();
-        smallMarkerPerson = Bitmap.createScaledBitmap(b, 200, 200, false);
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -131,10 +147,17 @@ public class Main_drawer extends AppCompatActivity
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.mapView);
         mapFragment.getMapAsync(this);
+        BitmapDrawable bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(getResources(), R.drawable.person_marker, null);
+        Bitmap b = bitmapdraw.getBitmap();
+        smallMarkerPerson = Bitmap.createScaledBitmap(b, 200, 200, false);
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        if(googleMap == null){
+            Log.e(TAG,"GOOGLEMAP IS NULL");
+            return;
+        }
         gmap = googleMap;
         gmap.setOnMarkerClickListener(this);
         gmap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
@@ -143,6 +166,7 @@ public class Main_drawer extends AppCompatActivity
         Bitmap b = bitmapdraw.getBitmap();
         smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
         CarClient client = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+
         Call<List<CarCurrent>> carCall = client.getCars();
         carCall.enqueue(new Callback<List<CarCurrent>>() {
             @Override

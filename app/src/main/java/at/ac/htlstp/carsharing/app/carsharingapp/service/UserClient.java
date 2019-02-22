@@ -8,6 +8,7 @@ package at.ac.htlstp.carsharing.app.carsharingapp.service;
 import java.math.BigDecimal;
 import java.util.List;
 
+import at.ac.htlstp.carsharing.app.carsharingapp.model.AndroidLogin;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.User;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.UserCurrent;
 import retrofit2.Call;
@@ -67,4 +68,6 @@ public interface UserClient {
     @GET("user/available")
     Call<List<UserCurrent>> getAvailableUsers();
 
+    @GET("user/androidLogin/{email}/{pwd}")
+    Call<AndroidLogin> checkAndroidLogin(@Path("email") String email, @Path("pwd") String pwd);
 }
