@@ -68,6 +68,11 @@ public interface UserClient {
     @GET("user/available")
     Call<List<UserCurrent>> getAvailableUsers();
 
-    @GET("user/androidLogin/{email}/{pwd}")
-    Call<AndroidLogin> checkAndroidLogin(@Path("email") String email, @Path("pwd") String pwd);
+    @GET("user/androidLogin/{email}/{pwd}/{token}")
+    Call<AndroidLogin> checkAndroidLogin(@Path("email") String email, @Path("pwd") String pwd, @Path("token") String token);
+
+    @GET("user/androidTokenRegister/{email}/{token}")
+    Call<Boolean> registerAndroidToken(@Path("email") String email, @Path("token") String token);
+
+
 }

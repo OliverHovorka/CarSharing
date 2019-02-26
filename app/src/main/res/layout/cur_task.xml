@@ -61,7 +61,8 @@
         android:layout_below="@+id/imageView3"
         android:layout_centerHorizontal="true"
         android:background="@color/car2goBlue"
-        android:text="TextView"
+        android:lineSpacingExtra="8sp"
+        android:text="Loading..."
         android:textColor="@android:color/white"
         android:textSize="25sp" />
 

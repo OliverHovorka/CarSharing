@@ -8,6 +8,7 @@ import com.google.firebase.messaging.RemoteMessage;
 public class FirebaseMessageService extends FirebaseMessagingService {
 
     public static final String TAG = FirebaseMessageService.class.getSimpleName();
+    public static String currentToken= null;
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
@@ -43,6 +44,7 @@ public class FirebaseMessageService extends FirebaseMessagingService {
     @Override
     public void onNewToken(String s) {
         super.onNewToken(s);
+        currentToken = s;
         Log.e(TAG,"FIRE TOKEN: " + s);
     }
 }

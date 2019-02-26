@@ -21,7 +21,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
-
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -29,7 +28,6 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -37,29 +35,23 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
-import com.google.firebase.messaging.RemoteMessage;
-
 import java.math.BigDecimal;
 import java.util.List;
-
 import at.ac.htlstp.carsharing.app.carsharingapp.R;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
-import at.ac.htlstp.carsharing.app.carsharingapp.model.Job;
-import at.ac.htlstp.carsharing.app.carsharingapp.model.User;
-import at.ac.htlstp.carsharing.app.carsharingapp.model.UserCurrent;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.DataBean;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
-import at.ac.htlstp.carsharing.app.carsharingapp.service.JobClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.UserClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
 
 public class Main_drawer extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, LocationListener,
@@ -72,10 +64,7 @@ public class Main_drawer extends AppCompatActivity
     private static Bitmap smallMarkerPerson;
     private static GoogleMap gmap;
     private static Marker userMarker;
-    private static User user;
-    private static Polyline poly;
     private static Bitmap smallMarker = null;
-    private int userID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,40 +77,12 @@ public class Main_drawer extends AppCompatActivity
         FirebaseInstanceId.getInstance().getInstanceId().addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
             @Override
             public void onComplete(@NonNull Task<InstanceIdResult> task) {
-                if(!task.isSuccessful()){
-                    Log.e(TAG,"FirebaseException");
-                }else{
+                if (!task.isSuccessful()) {
+                    Log.e(TAG, "FirebaseException");
+                } else {
                     String token = task.getResult().getToken();
-                    Log.e(TAG,"TOKEN: " + token);
+                    Log.e(TAG, "TOKEN: " + token);
                 }
-            }
-        });
-
-        Intent logI = getIntent();
-        userID = logI.getIntExtra("userID",-1);
-        if(userID == -1){
-            Log.e(TAG,"USERID couldnt be transferred");
-            Toast.makeText(Main_drawer.this, "UserID could not be transferred", Toast.LENGTH_LONG).show();
-        }
-
-        UserClient uclient = GenericService.getClient(UserClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
-        Call<User> callUser = uclient.getUser(userID);
-        callUser.enqueue(new Callback<User>() {
-            @Override
-            public void onResponse(Call<User> call, Response<User> response) {
-                if(response.body() == null){
-                    Log.e(TAG,"USER could not be called");
-                    Toast.makeText(Main_drawer.this, "User could not be called: " + response.body() + " code: " + response.code(), Toast.LENGTH_LONG).show();
-                    return;
-                }
-                user = response.body();
-                Log.i(TAG,"User was loaded: " + user.toString());
-            }
-
-            @Override
-            public void onFailure(Call<User> call, Throwable t) {
-                Log.e(TAG,"Failure while loading user: uid: " + userID);
-                Toast.makeText(Main_drawer.this, "User could not be loaded", Toast.LENGTH_LONG).show();
             }
         });
 
@@ -154,8 +115,8 @@ public class Main_drawer extends AppCompatActivity
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        if(googleMap == null){
-            Log.e(TAG,"GOOGLEMAP IS NULL");
+        if (googleMap == null) {
+            Log.e(TAG, "GOOGLEMAP IS NULL");
             return;
         }
         gmap = googleMap;
@@ -165,28 +126,45 @@ public class Main_drawer extends AppCompatActivity
         BitmapDrawable bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(getResources(), R.drawable.car_marker, null);
         Bitmap b = bitmapdraw.getBitmap();
         smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
-        CarClient client = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+        if(DataBean.getCurJob() == null) {
+            CarClient client = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
 
-        Call<List<CarCurrent>> carCall = client.getCars();
-        carCall.enqueue(new Callback<List<CarCurrent>>() {
-            @Override
-            public void onResponse(Call<List<CarCurrent>> call, Response<List<CarCurrent>> response) {
-                List<CarCurrent> carList;
-                carList = response.body();
-                for (CarCurrent c : carList) {
-                    LatLng pos = new LatLng(c.getLat().doubleValue(), c.getLng().doubleValue());
-                    gmap.addMarker(new MarkerOptions()
-                            .position(pos)
-                            .title(c.getCar().getVin())
-                            .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
+            Call<List<CarCurrent>> carCall = client.getCars();
+            carCall.enqueue(new Callback<List<CarCurrent>>() {
+                @Override
+                public void onResponse(Call<List<CarCurrent>> call, Response<List<CarCurrent>> response) {
+                    List<CarCurrent> carList;
+                    carList = response.body();
+                    if (carList != null) {
+                        DataBean.setCarList(carList);
+                    }
+                    for (CarCurrent c : carList) {
+                        LatLng pos = new LatLng(c.getLat().doubleValue(), c.getLng().doubleValue());
+                        Marker m = gmap.addMarker(new MarkerOptions()
+                                .position(pos)
+                                .title(c.getCar().getVin())
+                                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
+                        m.setTag(c);
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<List<CarCurrent>> call, Throwable t) {
-                Log.e(TAG, "Car call failed + : " + t.fillInStackTrace());
+                @Override
+                public void onFailure(Call<List<CarCurrent>> call, Throwable t) {
+                    Log.e(TAG, "Car call failed + : " + t.fillInStackTrace());
+                }
+            });
+        }else{
+            if(DataBean.getCurCar() != null) {
+                LatLng pos = new LatLng(DataBean.getCurCar().getLat().doubleValue(), DataBean.getCurCar().getLng().doubleValue());
+                Marker m = gmap.addMarker(new MarkerOptions()
+                        .position(pos)
+                        .title(DataBean.getCurCar().getCar().getVin())
+                        .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
+                m.setTag(DataBean.getCurCar());
+            }else{
+                Log.e(TAG,"DataBean curCar is null");
             }
-        });
+        }
         gmap.moveCamera(CameraUpdateFactory.newLatLng(standort));
         googleMap.setMinZoomPreference(10.0f);
         googleMap.setMaxZoomPreference(50.0f);
@@ -205,44 +183,30 @@ public class Main_drawer extends AppCompatActivity
     }
 
 
-    @SuppressWarnings("StatementWithEmptyBody")
+
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
         final Intent i;
         if (id == R.id.current_task) {
-            i = new Intent(this, CurTask.class);
-            JobClient jclient = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
-            Call<Job> callJob = jclient.getCurrentJobForUser(user.getId());
-            callJob.enqueue(new Callback<Job>() {
-                @Override
-                public void onResponse(Call<Job> call, Response<Job> response) {
-                    Job j = response.body();
-                    if(j == null){
-                        Toast.makeText(Main_drawer.this,"User has no Job currently",Toast.LENGTH_LONG).show();
-                        return;
-                    }else {
-                        i.putExtra("carVin", j.getVin().getVin());
-                        i.putExtra("userID", user.getId());
-                        Main_drawer.this.startActivity(i);
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<Job> call, Throwable t) {
-                    Toast.makeText(Main_drawer.this,"Job could not be loaded",Toast.LENGTH_LONG).show();
-                }
-            });
+            if (DataBean.getCurJob() == null) {
+                Toast.makeText(Main_drawer.this, "User has no Job currently", Toast.LENGTH_LONG).show();
+            } else {
+                i = new Intent(this, CurTask.class);
+                Main_drawer.this.startActivity(i);
+            }
 
         } else if (id == R.id.prev_tasks) {
 
         } else if (id == R.id.show_cars) {
             i = new Intent(this, ShowCars.class);
-            i.putExtra("Userlocation", userMarker.getPosition().latitude + ";" + userMarker.getPosition().longitude);
             this.startActivity(i);
         } else if (id == R.id.logout) {
-
+            DataBean.reset();
+            i = new Intent(this,Login.class);
+            this.startActivity(i);
+            finish();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -282,8 +246,8 @@ public class Main_drawer extends AppCompatActivity
     }
 
     private void handleNewLocation(Location location) {
-        if(gmap == null){
-            Log.e(TAG,"GOOGLEMAP IS NULL HANDLENEWLOC");
+        if (gmap == null) {
+            Log.e(TAG, "GOOGLEMAP IS NULL HANDLENEWLOC");
             return;
         }
         if (userMarker != null) {
@@ -292,30 +256,35 @@ public class Main_drawer extends AppCompatActivity
         UserClient userPos = GenericService.getClient(UserClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
         BigDecimal lat = new BigDecimal(location.getLatitude());
         BigDecimal lng = new BigDecimal(location.getLongitude());
-        Call<Boolean> updateSucc = userPos.updateUserPosition(userID,lat,lng);
-        updateSucc.enqueue(new Callback<Boolean>() {
-            @Override
-            public void onResponse(Call<Boolean> call, Response<Boolean> response) {
-                if(response.body()) {
-                    Log.i(TAG, "Userposition update successful");
-                }else{
-                    Log.e(TAG,"Userposition update not accepted");
+        if(DataBean.getUser() != null) {
+            Call<Boolean> updateSucc = userPos.updateUserPosition(DataBean.getUser().getId(), lat, lng);
+            updateSucc.enqueue(new Callback<Boolean>() {
+                @Override
+                public void onResponse(Call<Boolean> call, Response<Boolean> response) {
+                    if (response.body()) {
+                        Log.i(TAG, "Userposition update successful");
+                    } else {
+                        Log.e(TAG, "Userposition update not accepted");
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<Boolean> call, Throwable t) {
-                Log.e(TAG,"Userposition update failed");
-            }
-        });
-        double currentLatitude = location.getLatitude();
-        double currentLongitude = location.getLongitude();
-        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
-        userMarker = gmap.addMarker(new MarkerOptions()
-                .position(latLng)
-                .title("User")
-                .icon(BitmapDescriptorFactory.fromBitmap(smallMarkerPerson)));
-        Log.i(TAG, "New Marker Added MAIN DRAWER");
+                @Override
+                public void onFailure(Call<Boolean> call, Throwable t) {
+                    Log.e(TAG, "Userposition update failed");
+                }
+            });
+            double currentLatitude = location.getLatitude();
+            double currentLongitude = location.getLongitude();
+            LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+            DataBean.setUserPosition(latLng);
+            userMarker = gmap.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title("User")
+                    .icon(BitmapDescriptorFactory.fromBitmap(smallMarkerPerson)));
+            Log.i(TAG, "New Marker Added MAIN DRAWER");
+        }else{
+            Log.e(TAG,"DataBean user is null");
+        }
     }
 
     @Override
@@ -337,10 +306,6 @@ public class Main_drawer extends AppCompatActivity
         }
     }
 
-    @Override
-    public void onPointerCaptureChanged(boolean hasCapture) {
-
-    }
 
     @Override
     public void onLocationChanged(Location location) {
@@ -356,9 +321,6 @@ public class Main_drawer extends AppCompatActivity
             return false;
         } else {
             Intent i = new Intent(this, AssignCar.class);
-            i.putExtra("carVin", marker.getTitle());
-            i.putExtra("userID", user.getId());
-            Log.e(TAG,"AssignCar: " + userID);
             this.startActivity(i);
             return true;
         }

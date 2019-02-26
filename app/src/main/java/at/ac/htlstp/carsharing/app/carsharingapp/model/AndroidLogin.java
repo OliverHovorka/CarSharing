@@ -17,6 +17,7 @@ public class AndroidLogin implements Serializable {
     private boolean successful;
     private User user;
     private Job currentJob;
+    private CarCurrent cc;
 
     public AndroidLogin() {
     }
@@ -51,39 +52,37 @@ public class AndroidLogin implements Serializable {
         this.currentJob = currentJob;
     }
 
-    @Override
-    public int hashCode() {
-        int hash = 3;
-        hash = 19 * hash + (this.successful ? 1 : 0);
-        hash = 19 * hash + Objects.hashCode(this.user);
-        hash = 19 * hash + Objects.hashCode(this.currentJob);
-        return hash;
+    public CarCurrent getCc() {
+        return cc;
+    }
+
+    public void setCc(CarCurrent cc) {
+        this.cc = cc;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final AndroidLogin other = (AndroidLogin) obj;
-        if (this.successful != other.successful) {
-            return false;
-        }
-        if (!Objects.equals(this.user, other.user)) {
-            return false;
-        }
-        return Objects.equals(this.currentJob, other.currentJob);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AndroidLogin that = (AndroidLogin) o;
+        return isSuccessful() == that.isSuccessful() &&
+                Objects.equals(getUser(), that.getUser()) &&
+                Objects.equals(getCurrentJob(), that.getCurrentJob()) &&
+                Objects.equals(getCc(), that.getCc());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isSuccessful(), getUser(), getCurrentJob(), getCc());
     }
 
     @Override
     public String toString() {
-        return "AndroidLogin{" + "successful=" + successful + ", user=" + user + ", currentJob=" + currentJob + '}';
+        return "AndroidLogin{" +
+                "successful=" + successful +
+                ", user=" + user +
+                ", currentJob=" + currentJob +
+                ", cc=" + cc +
+                '}';
     }
-
 }

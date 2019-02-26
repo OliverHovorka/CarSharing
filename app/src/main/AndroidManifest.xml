@@ -10,8 +10,7 @@
         android:label="CarSharing"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/generalnotitle"
-        android:name=".activities.Application">
+        android:theme="@style/generalnotitle">
         <service android:name=".service.FirebaseMessageService">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

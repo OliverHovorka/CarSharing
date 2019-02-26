@@ -14,13 +14,13 @@ import android.view.View;
 import android.view.Window;
 import android.widget.EditText;
 import android.widget.Toast;
-
 import at.ac.htlstp.carsharing.app.carsharingapp.R;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.AndroidLogin;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.Job;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.User;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.DataBean;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.FirebaseMessageService;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
-import at.ac.htlstp.carsharing.app.carsharingapp.service.JobClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.UserClient;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -56,7 +56,9 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
             if (email.matches("") || password.matches("")) {
                 Toast.makeText(Login.this, "Username or password is empty!", Toast.LENGTH_LONG).show();
             } else {
-                Call<AndroidLogin> loginCall = loginClient.checkAndroidLogin(email, password);
+                String token = FirebaseMessageService.currentToken == null ? "null" : FirebaseMessageService.currentToken;
+                Toast.makeText(this,"Logging in...",Toast.LENGTH_LONG).show();
+                Call<AndroidLogin> loginCall = loginClient.checkAndroidLogin(email, password, token);
                 loginCall.enqueue(new Callback<AndroidLogin>() {
                     @Override
                     public void onResponse(Call<AndroidLogin> call, Response<AndroidLogin> response) {
@@ -68,13 +70,17 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
                                 if (curJ == null) {
                                     Log.i(TAG, "User: " + u.getEmail() + " has no curjob");
                                     Intent imain = new Intent(Login.this, Main_drawer.class);
-                                    imain.putExtra("userID", u.getId());
+                                    DataBean.setUser(u);
                                     Login.this.startActivity(imain);
+                                    finish();
                                 } else {
                                     Intent icur = new Intent(Login.this, CurTask.class);
-                                    Log.i(TAG, "User: " + u.getEmail() + " Job: " + curJ.getId());
-                                    icur.putExtra("userID", u.getId());
+                                    Log.i(TAG, "LOGTEST User: " + u.getEmail() + " Job: " + curJ.getId() + " CC:" + log.getCc());
+                                    DataBean.setUser(u);
+                                    DataBean.setCurCar(log.getCc());
+                                    DataBean.setCurJob(curJ);
                                     Login.this.startActivity(icur);
+                                    finish();
                                 }
                             }else{
                                 Toast.makeText(Login.this, "Email or password incorrect!", Toast.LENGTH_LONG).show();
@@ -92,6 +98,9 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
                     }
                 });
             }
+        }else{
+            String[] perm = {Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.INTERNET};
+            requestPermissions(perm,1);
         }
     }
 
@@ -111,5 +120,7 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
             Toast.makeText(this, "The Location and Internet permission must be granted!", Toast.LENGTH_LONG).show();
         }
     }
+
+
 
 }

@@ -31,7 +31,7 @@ public interface JobClient {
     Call<Job> getCurrentJobForUser(@Path("userId") int id);
 
     @POST("job/create/{userId}/{vin}/{destlat}/{destlng}")
-    Call<Boolean> createJob(@Path("userId") int uid, @Path("vin") String vin, @Path("destlat") double destLat, @Path("destlng") double destLng);
+    Call<Job> createJob(@Path("userId") int uid, @Path("vin") String vin, @Path("destlat") double destLat, @Path("destlng") double destLng);
 
     @POST("job/finish/{jobId}")
     Call<Boolean> finishJob(@Path("jobId") int jid);
