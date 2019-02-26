@@ -16,6 +16,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.Toast;
+
 import org.joda.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -26,7 +28,7 @@ import at.ac.htlstp.carsharing.app.carsharingapp.service.DataBean;
 
 public class ShowCars extends AppCompatActivity{
 
-    public static final String TAG = Main_drawer.class.getSimpleName();
+    public static final String TAG = ShowCars.class.getSimpleName();
     private static List<CarCurrent> carList =  new ArrayList<>();
 
     @SuppressLint({"MissingPermission", "NewApi"})
@@ -68,8 +70,13 @@ public class ShowCars extends AppCompatActivity{
                     Intent i = new Intent(ShowCars.this, AssignCar.class);
                     Object listItem = lv.getItemAtPosition(position);
                     CarCurrent carCur = (CarCurrent) listItem;
-                    DataBean.setCurCar(carCur);
-                    ShowCars.this.startActivity(i);
+                    if(DataBean.getCurJob() == null) {
+                        DataBean.setCurCar(carCur);
+                        ShowCars.this.startActivity(i);
+                    }else{
+                        Toast.makeText(ShowCars.this,"User already has a job", Toast.LENGTH_LONG).show();
+                        return;
+                    }
                 }
             });
 

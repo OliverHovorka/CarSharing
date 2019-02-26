@@ -361,6 +361,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                             Log.i(TAG, "Job creation: " + response.body());
                         } else {
                             Log.e(TAG, "Job creation rejected : " + response.code());
+                            Toast.makeText(AssignCar.this,"User already has a job",Toast.LENGTH_LONG).show();
                         }
                     }
 

@@ -127,32 +127,14 @@ public class Main_drawer extends AppCompatActivity
         Bitmap b = bitmapdraw.getBitmap();
         smallMarker = Bitmap.createScaledBitmap(b, 200, 200, false);
         if(DataBean.getCurJob() == null) {
-            CarClient client = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
-
-            Call<List<CarCurrent>> carCall = client.getCars();
-            carCall.enqueue(new Callback<List<CarCurrent>>() {
-                @Override
-                public void onResponse(Call<List<CarCurrent>> call, Response<List<CarCurrent>> response) {
-                    List<CarCurrent> carList;
-                    carList = response.body();
-                    if (carList != null) {
-                        DataBean.setCarList(carList);
-                    }
-                    for (CarCurrent c : carList) {
-                        LatLng pos = new LatLng(c.getLat().doubleValue(), c.getLng().doubleValue());
-                        Marker m = gmap.addMarker(new MarkerOptions()
-                                .position(pos)
-                                .title(c.getCar().getVin())
-                                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
-                        m.setTag(c);
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<List<CarCurrent>> call, Throwable t) {
-                    Log.e(TAG, "Car call failed + : " + t.fillInStackTrace());
-                }
-            });
+            for (CarCurrent c : DataBean.getCarList()) {
+                LatLng pos = new LatLng(c.getLat().doubleValue(), c.getLng().doubleValue());
+                Marker m = gmap.addMarker(new MarkerOptions()
+                        .position(pos)
+                        .title(c.getCar().getVin())
+                        .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
+                m.setTag(c);
+            }
         }else{
             if(DataBean.getCurCar() != null) {
                 LatLng pos = new LatLng(DataBean.getCurCar().getLat().doubleValue(), DataBean.getCurCar().getLng().doubleValue());
@@ -198,7 +180,8 @@ public class Main_drawer extends AppCompatActivity
             }
 
         } else if (id == R.id.prev_tasks) {
-
+            i = new Intent(this, PrevTasks.class);
+            this.startActivity(i);
         } else if (id == R.id.show_cars) {
             i = new Intent(this, ShowCars.class);
             this.startActivity(i);
@@ -320,9 +303,14 @@ public class Main_drawer extends AppCompatActivity
             Toast.makeText(this, "Can not navigate to user!", Toast.LENGTH_LONG).show();
             return false;
         } else {
-            Intent i = new Intent(this, AssignCar.class);
-            this.startActivity(i);
-            return true;
+            if(DataBean.getCurJob() == null) {
+                Intent i = new Intent(this, AssignCar.class);
+                this.startActivity(i);
+                return true;
+            }else{
+                Toast.makeText(this,"User already has a job", Toast.LENGTH_LONG).show();
+                return false;
+            }
         }
     }
 }

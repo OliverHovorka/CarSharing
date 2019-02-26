@@ -43,6 +43,8 @@
             android:theme="@style/generalnotitle.NoActionBar"/>
         <activity android:name=".activities.ShowCars"
             android:theme="@style/generalnotitle.NoActionBar"/>
+        <activity android:name=".activities.PrevTasks"
+            android:theme="@style/generalnotitle.NoActionBar"/>
     </application>
 
 

@@ -23,6 +23,8 @@ public class DataBean {
 
     private static LatLng userPosition= null;
 
+    private static List<Job> jobList = new ArrayList<>();
+
     private DataBean(){
 
     }
@@ -77,6 +79,14 @@ public class DataBean {
 
     public static void setUserPosition(LatLng userPositiong) {
         DataBean.userPosition = userPositiong;
+    }
+
+    public static List<Job> getJobList() {
+        return jobList;
+    }
+
+    public static void setJobList(List<Job> jobList) {
+        DataBean.jobList = jobList;
     }
 
     public static void reset(){

@@ -14,10 +14,20 @@ import android.view.View;
 import android.view.Window;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.util.List;
+
 import at.ac.htlstp.carsharing.app.carsharingapp.R;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.AndroidLogin;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.Job;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.User;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.DataBean;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.FirebaseMessageService;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
@@ -36,6 +46,24 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         getSupportActionBar().hide();
         setContentView(R.layout.login_activity);
+        CarClient client = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+
+        Call<List<CarCurrent>> carCall = client.getCars();
+        carCall.enqueue(new Callback<List<CarCurrent>>() {
+            @Override
+            public void onResponse(Call<List<CarCurrent>> call, Response<List<CarCurrent>> response) {
+                List<CarCurrent> carList;
+                carList = response.body();
+                if (carList != null) {
+                    DataBean.setCarList(carList);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<CarCurrent>> call, Throwable t) {
+                Log.e(TAG, "Car call failed + : " + t.fillInStackTrace());
+            }
+        });
     }
 
     public void forgotPassword(View v) {
