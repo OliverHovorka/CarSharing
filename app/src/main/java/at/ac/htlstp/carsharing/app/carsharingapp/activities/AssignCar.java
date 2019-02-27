@@ -102,6 +102,8 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                 .addApi(LocationServices.API)
                 .build();
 
+        Log.e(TAG,"Assign: " + mGoogleApiClient);
+
         mLocationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(5 * 1000)        // 10 seconds, in milliseconds
@@ -166,7 +168,11 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
     @Override
     protected void onResume() {
         super.onResume();
-        mGoogleApiClient.connect();
+        if(mGoogleApiClient != null) {
+            mGoogleApiClient.connect();
+        }else{
+            Log.e(TAG,"Assign: onResume: " + mGoogleApiClient);
+        }
     }
 
     @Override
@@ -356,6 +362,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                         if (response.body() != null) {
                             DataBean.setCurJob(response.body());
                             AssignCar.this.startActivity(i);
+                            finish();
                             Log.i(TAG, "Job creation: uid:" + DataBean.getUser().getId() + " vin: " + DataBean.getCurCar().getCar().getVin());
                             Log.i(TAG, "Job creation status: " + response.code());
                             Log.i(TAG, "Job creation: " + response.body());

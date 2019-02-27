@@ -1,6 +1,7 @@
 package at.ac.htlstp.carsharing.app.carsharingapp.activities;
 
 import android.Manifest;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
@@ -23,6 +24,9 @@ import android.view.MenuItem;
 import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingClient;
+import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -36,17 +40,20 @@ import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import at.ac.htlstp.carsharing.app.carsharingapp.R;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
-import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.DataBean;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.GeofenceTransitionsIntentService;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.UserClient;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -65,6 +72,7 @@ public class Main_drawer extends AppCompatActivity
     private static GoogleMap gmap;
     private static Marker userMarker;
     private static Bitmap smallMarker = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +93,8 @@ public class Main_drawer extends AppCompatActivity
                 }
             }
         });
+
+
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -112,6 +122,8 @@ public class Main_drawer extends AppCompatActivity
         Bitmap b = bitmapdraw.getBitmap();
         smallMarkerPerson = Bitmap.createScaledBitmap(b, 200, 200, false);
     }
+
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -305,11 +317,12 @@ public class Main_drawer extends AppCompatActivity
         } else {
             if(DataBean.getCurJob() == null) {
                 Intent i = new Intent(this, AssignCar.class);
+                DataBean.setCurCar((CarCurrent) marker.getTag());
                 this.startActivity(i);
                 return true;
             }else{
                 Toast.makeText(this,"User already has a job", Toast.LENGTH_LONG).show();
-                return false;
+                return true;
             }
         }
     }

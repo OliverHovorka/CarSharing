@@ -1,9 +1,19 @@
 package at.ac.htlstp.carsharing.app.carsharingapp.service;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.graphics.Color;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+
+import at.ac.htlstp.carsharing.app.carsharingapp.activities.CurTask;
+import at.ac.htlstp.carsharing.app.carsharingapp.activities.Login;
+import at.ac.htlstp.carsharing.app.carsharingapp.activities.Main_drawer;
 
 public class FirebaseMessageService extends FirebaseMessagingService {
 
@@ -20,8 +30,25 @@ public class FirebaseMessageService extends FirebaseMessagingService {
         Log.e(TAG, "FIRE MSG: " + remoteMessage.toString());
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
-            Log.d(TAG, "FIRE Message data payload: " + remoteMessage.getData());
-
+            Log.e(TAG, "FIRE Message data payload: " + remoteMessage.getData());
+            Intent i = new Intent(this, Login.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, i, 0);
+            NotificationManager notificationManager =
+                    (NotificationManager) getSystemService(GeofenceTransitionsIntentService.NOTIFICATION_SERVICE);
+            String channelId = "carChannelId";
+            CharSequence channelName = "carChannel";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel notificationChannel = new NotificationChannel(channelId, channelName, importance);
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.RED);
+            notificationChannel.enableVibration(true);
+            notificationChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+            notificationManager.createNotificationChannel(notificationChannel);
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "carChannelId")
+                    .setContentTitle("Firebase MsgId: " + remoteMessage.getMessageId())
+                    .setContentText("Firebase MsgTime: " + remoteMessage.getSentTime())
+                    .setContentIntent(pendingIntent)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
             if (/* Check if data needs to be processed by long running job */ true) {
                 // For long-running tasks (10 seconds or more) use Firebase Job Dispatcher.
 

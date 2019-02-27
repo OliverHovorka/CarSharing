@@ -15,21 +15,11 @@ import android.view.Window;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
-
-import java.util.List;
-
 import at.ac.htlstp.carsharing.app.carsharingapp.R;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.AndroidLogin;
-import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.Job;
 import at.ac.htlstp.carsharing.app.carsharingapp.model.User;
-import at.ac.htlstp.carsharing.app.carsharingapp.service.CarClient;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.DataBean;
-import at.ac.htlstp.carsharing.app.carsharingapp.service.FirebaseMessageService;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.UserClient;
 import retrofit2.Call;
@@ -40,30 +30,15 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
 
     public static final String TAG = Login.class.getSimpleName();
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         getSupportActionBar().hide();
         setContentView(R.layout.login_activity);
-        CarClient client = GenericService.getClient(CarClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
 
-        Call<List<CarCurrent>> carCall = client.getCars();
-        carCall.enqueue(new Callback<List<CarCurrent>>() {
-            @Override
-            public void onResponse(Call<List<CarCurrent>> call, Response<List<CarCurrent>> response) {
-                List<CarCurrent> carList;
-                carList = response.body();
-                if (carList != null) {
-                    DataBean.setCarList(carList);
-                }
-            }
 
-            @Override
-            public void onFailure(Call<List<CarCurrent>> call, Throwable t) {
-                Log.e(TAG, "Car call failed + : " + t.fillInStackTrace());
-            }
-        });
     }
 
     public void forgotPassword(View v) {
@@ -84,7 +59,7 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
             if (email.matches("") || password.matches("")) {
                 Toast.makeText(Login.this, "Username or password is empty!", Toast.LENGTH_LONG).show();
             } else {
-                String token = FirebaseMessageService.currentToken == null ? "null" : FirebaseMessageService.currentToken;
+                String token = Application.currentToken == null ? "null" : Application.currentToken;
                 Toast.makeText(this,"Logging in...",Toast.LENGTH_LONG).show();
                 Call<AndroidLogin> loginCall = loginClient.checkAndroidLogin(email, password, token);
                 loginCall.enqueue(new Callback<AndroidLogin>() {
@@ -93,8 +68,10 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
                         if (response.body() != null) {
                             AndroidLogin log = response.body();
                             if(log.isSuccessful()) {
+                                Log.e(TAG,"LoginCall: " + log);
                                 Job curJ = log.getCurrentJob();
                                 User u = log.getUser();
+                                DataBean.setCarList(log.getCars());
                                 if (curJ == null) {
                                     Log.i(TAG, "User: " + u.getEmail() + " has no curjob");
                                     Intent imain = new Intent(Login.this, Main_drawer.class);
@@ -123,6 +100,9 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
                     @Override
                     public void onFailure(Call<AndroidLogin> call, Throwable t) {
                         Log.e(TAG, "LoginCall failed: " + t.getMessage());
+                        Log.e(TAG, "LoginCall failed: " + t.getCause());
+                        Log.e(TAG, "LoginCall failed: " + t.getLocalizedMessage());
+                        Log.e(TAG, "LoginCall failed: " + t.getStackTrace());
                     }
                 });
             }

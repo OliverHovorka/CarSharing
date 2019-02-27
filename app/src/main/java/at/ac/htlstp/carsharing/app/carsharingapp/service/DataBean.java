@@ -1,5 +1,6 @@
 package at.ac.htlstp.carsharing.app.carsharingapp.service;
 
+import com.google.android.gms.location.Geofence;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.ArrayList;
@@ -24,6 +25,10 @@ public class DataBean {
     private static LatLng userPosition= null;
 
     private static List<Job> jobList = new ArrayList<>();
+
+    private static int geoFenceRadius = 50;
+
+    private static Geofence geofence = null;
 
     private DataBean(){
 
@@ -87,6 +92,22 @@ public class DataBean {
 
     public static void setJobList(List<Job> jobList) {
         DataBean.jobList = jobList;
+    }
+
+    public static int getGeoFenceRadius() {
+        return geoFenceRadius;
+    }
+
+    public static void setGeoFenceRadius(int geoFenceRadius) {
+        DataBean.geoFenceRadius = geoFenceRadius;
+    }
+
+    public static Geofence getGeofence() {
+        return geofence;
+    }
+
+    public static void setGeofence(Geofence geofence) {
+        DataBean.geofence = geofence;
     }
 
     public static void reset(){

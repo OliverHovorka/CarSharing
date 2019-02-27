@@ -109,7 +109,7 @@ public class Job implements Serializable {
 
     @Override
     public String toString() {
-        return "at.ac.htlstp.carsharing.server.model.Job[ id=" + id + " ]";
+        return "Id: " + getId() + " Starttime: " + getStartTime() + " Endtime: " + getEndTime();
     }
 
 }

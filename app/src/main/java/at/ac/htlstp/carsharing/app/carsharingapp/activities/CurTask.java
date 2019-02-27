@@ -2,6 +2,7 @@ package at.ac.htlstp.carsharing.app.carsharingapp.activities;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
@@ -26,6 +27,9 @@ import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingClient;
+import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -40,6 +44,8 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.maps.DirectionsApi;
 import com.google.maps.GeoApiContext;
 import com.google.maps.android.PolyUtil;
@@ -51,12 +57,15 @@ import org.joda.time.DateTime;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import at.ac.htlstp.carsharing.app.carsharingapp.R;
+import at.ac.htlstp.carsharing.app.carsharingapp.model.CarCurrent;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.DataBean;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GenericService;
+import at.ac.htlstp.carsharing.app.carsharingapp.service.GeofenceTransitionsIntentService;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.MyLocationListener;
 import at.ac.htlstp.carsharing.app.carsharingapp.service.UserClient;
 import retrofit2.Call;
@@ -77,6 +86,8 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     private static Marker destMarker;
     private static Polyline[] polys = new Polyline[0];
     private static LocationManager mLocationManager;
+    private GeofencingClient geofencingClient;
+    private PendingIntent geofencePendingIntent;
 
     @SuppressLint({"MissingPermission", "NewApi"})
     @Override
@@ -97,6 +108,41 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(5 * 1000)        // 10 seconds, in milliseconds
                 .setFastestInterval(1 * 1000); // 1 second, in milliseconds
+
+        geofencingClient = LocationServices.getGeofencingClient(this);
+        Geofence geofence = new Geofence.Builder()
+                // Set the request ID of the geofence. This is a string to identify this
+                // geofence.
+                .setRequestId(DataBean.getCurJob().getId() + "")
+                .setCircularRegion(
+                        DataBean.getCurJob().getDestLat(),
+                        DataBean.getCurJob().getDestLng(),
+                        DataBean.getGeoFenceRadius()
+                )
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                .build();
+        DataBean.setGeofence(geofence);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            geofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
+                    .addOnSuccessListener(this, new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Log.i(TAG,"Geofences registered successfully");
+                        }
+                    })
+                    .addOnFailureListener(this, new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.e(TAG,"Geofences not registered");
+                            e.printStackTrace();
+                            Log.e(TAG,"Geofence: " + e.getMessage() + " Code: " + e.getCause() + " Class: " + e.getClass());
+                        }
+                    });
+        }else{
+            String[] perm = {Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.INTERNET};
+            requestPermissions(perm,1);
+        }
 
         if (DataBean.getCurCar() != null) {
             makeHeaderString(DataBean.getCurCar().getCar().getModel(), DataBean.getCurCar().getCar().getPlateNumber(),
@@ -133,6 +179,25 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         } else {
             Log.e(TAG, "onCreate DataBean curCar is null");
         }
+    }
+
+    private PendingIntent getGeofencePendingIntent() {
+        // Reuse the PendingIntent if we already have it.
+        if (geofencePendingIntent != null) {
+            return geofencePendingIntent;
+        }
+        Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when
+        // calling addGeofences() and removeGeofences().
+        geofencePendingIntent = PendingIntent.getService(this, 0, intent, 0);
+        return geofencePendingIntent;
+    }
+
+    private GeofencingRequest getGeofencingRequest() {
+        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
+        builder.addGeofence(DataBean.getGeofence());
+        return builder.build();
     }
 
     @Override
@@ -318,6 +383,11 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     }
 
     private void addPolyline(DirectionsResult... results) {
+        Log.e(TAG,"Polyline: " + results.length);
+        if(results.length < 2){
+            Log.e(TAG,"Polyline dreck");
+            return;
+        }
         for (Polyline p : polys) {
             p.remove();
         }
@@ -361,8 +431,8 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     public void redirectMaps(View v) {
         if (DataBean.getCurJob() != null) {
             Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=" + userMarker.getPosition().latitude + "," + userMarker.getPosition().longitude +
-                    "&destination=" + carMarker.getPosition().latitude + "," + carMarker.getPosition().longitude +
-                    "&waypoints=" + DataBean.getCurJob().getDestLat() + "," + DataBean.getCurJob().getDestLng() + "&travelmode=driving");
+                    "&destination=" + DataBean.getCurJob().getDestLat() + "," + DataBean.getCurJob().getDestLng() +
+                    "&waypoints=" + carMarker.getPosition().latitude + "," + carMarker.getPosition().longitude + "&travelmode=driving");
             Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
             mapIntent.setPackage("com.google.android.apps.maps");
             if (mapIntent.resolveActivity(getPackageManager()) != null) {

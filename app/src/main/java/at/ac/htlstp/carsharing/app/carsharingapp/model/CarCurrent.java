@@ -115,7 +115,7 @@ public class CarCurrent implements Serializable {
 
     @Override
     public String toString() {
-        return "at.ac.htlstp.carsharing.server.model.CarCurrent[ carCurrentPK=" + carCurrentPK + " ]";
+        return "Car: " + this.getCar().getModel() + " Platenumber: " + this.getCar().getPlateNumber() + " Fuellevel: " + this.getFuelLevel();
     }
 
 }
