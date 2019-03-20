@@ -36,7 +36,6 @@ import retrofit2.Response;
 
 public class PrevTasks extends AppCompatActivity {
     public static final String TAG = PrevTasks.class.getSimpleName();
-    private static List<Job> jobList = new ArrayList<>();
 
     @SuppressLint({"MissingPermission", "NewApi"})
     @Override
@@ -46,54 +45,47 @@ public class PrevTasks extends AppCompatActivity {
         setContentView(R.layout.prev_jobs);
         Window w = this.getWindow();
         w.setStatusBarColor(ContextCompat.getColor(this, R.color.car2goBlue));
-        if (!DataBean.getJobList().isEmpty()) {
-            JobClient client = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
-            Call<List<Job>> callJobList = client.getFinishedJobsForUser(DataBean.getUser().getId());
-            callJobList.enqueue(new Callback<List<Job>>() {
-                @Override
-                public void onResponse(Call<List<Job>> call, Response<List<Job>> response) {
-                    if (response.body() != null) {
-                        DataBean.setJobList(response.body());
-                    } else {
-                        Log.e(TAG, "Call body null");
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<List<Job>> call, Throwable t) {
-                    Log.e(TAG, "JobCall failed");
-                }
-            });
-        } else {
-            jobList = DataBean.getJobList();
-        }
-        ArrayAdapter<Job> listAdapterLV = new ArrayAdapter<Job>(PrevTasks.this, R.layout.simplerow, jobList) {
+        Log.e(TAG, "PREV Task create");
+        JobClient client = GenericService.getClient(JobClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
+        Call<List<Job>> callJobList = client.getFinishedJobsForUser(DataBean.getUser().getId());
+        callJobList.enqueue(new Callback<List<Job>>() {
             @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                // Get the current item from ListView
-                View view = super.getView(position, convertView, parent);
-                if (position % 2 == 1) {
-                    // Set a background color for ListView regular row/item
-                    view.setBackgroundColor(Color.parseColor("#FF00AAE0"));
+            public void onResponse(Call<List<Job>> call, Response<List<Job>> response) {
+                if (response.body() != null) {
+                    Log.e(TAG, "PREV JOBS: " + response.body().size());
+                    DataBean.setJobList(response.body());
+                    ArrayAdapter<Job> listAdapterLV = new ArrayAdapter<Job>(PrevTasks.this, R.layout.simplerow, DataBean.getJobList()) {
+                        @Override
+                        public View getView(int position, View convertView, ViewGroup parent) {
+                            // Get the current item from ListView
+                            View view = super.getView(position, convertView, parent);
+                            Log.e(TAG,"PREV VIEW: " + DataBean.getJobList().size());
+                            if (position % 2 == 1) {
+                                // Set a background color for ListView regular row/item
+                                view.setBackgroundColor(Color.parseColor("#FF00AAE0"));
+                            } else {
+                                // Set the background color for alternate row/item
+                                view.setBackgroundColor(Color.parseColor("#FF009EE0"));
+                            }
+                            return view;
+                        }
+                    };
+                    final ListView lv = (ListView) findViewById(R.id.jobList);
+                    lv.setAdapter(listAdapterLV);
                 } else {
-                    // Set the background color for alternate row/item
-                    view.setBackgroundColor(Color.parseColor("#FF009EE0"));
+                    Log.e(TAG, "PREV Call body null");
                 }
-                return view;
             }
-        };
-        final ListView lv = (ListView) findViewById(R.id.jobList);
-        lv.setAdapter(listAdapterLV);
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent i = new Intent(PrevTasks.this, AssignCar.class);
-                Object listItem = lv.getItemAtPosition(position);
-                CarCurrent carCur = (CarCurrent) listItem;
-                DataBean.setCurCar(carCur);
-                PrevTasks.this.startActivity(i);
+            public void onFailure(Call<List<Job>> call, Throwable t) {
+                Log.e(TAG, "PREV JobCall failed");
             }
         });
+
+        Log.e(TAG,"PREV before adapter: " + DataBean.getJobList().size());
+
+
 
     }
 }

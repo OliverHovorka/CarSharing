@@ -26,9 +26,11 @@ public class DataBean {
 
     private static List<Job> jobList = new ArrayList<>();
 
-    private static int geoFenceRadius = 50;
+    private static int geoFenceRadius = 500;
 
     private static Geofence geofence = null;
+
+    private static boolean foreground = true;
 
     private DataBean(){
 
@@ -110,6 +112,14 @@ public class DataBean {
         DataBean.geofence = geofence;
     }
 
+    public static boolean isForeground() {
+        return foreground;
+    }
+
+    public static void setForeground(boolean foreground) {
+        DataBean.foreground = foreground;
+    }
+
     public static void reset(){
         curCar = null;
         user = null;
@@ -117,4 +127,6 @@ public class DataBean {
         carList = null;
         userPosition = null;
     }
+
+
 }

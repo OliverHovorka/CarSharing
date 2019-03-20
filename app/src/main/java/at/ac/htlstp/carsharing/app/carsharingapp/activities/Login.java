@@ -26,6 +26,10 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+
+/**
+ *
+ */
 public class Login extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     public static final String TAG = Login.class.getSimpleName();
@@ -37,8 +41,6 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         getSupportActionBar().hide();
         setContentView(R.layout.login_activity);
-
-
     }
 
     public void forgotPassword(View v) {
@@ -128,7 +130,5 @@ public class Login extends AppCompatActivity implements ActivityCompat.OnRequest
             Toast.makeText(this, "The Location and Internet permission must be granted!", Toast.LENGTH_LONG).show();
         }
     }
-
-
 
 }

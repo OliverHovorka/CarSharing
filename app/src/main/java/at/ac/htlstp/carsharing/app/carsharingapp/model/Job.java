@@ -6,6 +6,9 @@
 package at.ac.htlstp.carsharing.app.carsharingapp.model;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Date;
 
 /**
@@ -109,7 +112,14 @@ public class Job implements Serializable {
 
     @Override
     public String toString() {
-        return "Id: " + getId() + " Starttime: " + getStartTime() + " Endtime: " + getEndTime();
+        String s = "";
+        try {
+             s = "Id: " + getId() + " Starttime: " + new SimpleDateFormat("dd.MM.yyyy HH:mm").format(Date.from(Instant.ofEpochMilli(getStartTime().getTime())))
+                      + "\n Endtime: " + new SimpleDateFormat("yyyy-MM-dd HH:mm").format(Date.from(Instant.ofEpochMilli(getStartTime().getTime())));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return s;
     }
 
 }

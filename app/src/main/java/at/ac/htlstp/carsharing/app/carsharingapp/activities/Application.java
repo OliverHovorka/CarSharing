@@ -17,11 +17,20 @@ import com.google.firebase.iid.InstanceIdResult;
 
 import at.ac.htlstp.carsharing.app.carsharingapp.service.GeofenceTransitionsIntentService;
 
+
+/**
+    Diese Application wird dafür verwendet um den Firebase token bei jedem Start der App direkt aus zu tauschen.
+    Es ist nicht völlig klar warum dies gebraucht jedoch Funktioniert der Token austausch sonst nicht
+     */
 public class Application extends android.app.Application {
 
     public static final String TAG = android.app.Application.class.getSimpleName();
     public static String currentToken= null;
 
+
+    /**
+    In dieser Methode wird ein Listener angelegt welcher die Firebase initialization listened und dann den Token in unser DataBean setzt
+     */
     @Override
     public void onCreate() {
         super.onCreate();

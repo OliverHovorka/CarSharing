@@ -1,11 +1,13 @@
 package at.ac.htlstp.carsharing.app.carsharingapp.service;
 
 import android.app.IntentService;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Color;
+import android.provider.ContactsContract;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
@@ -15,6 +17,9 @@ import com.google.android.gms.location.GeofencingEvent;
 
 import java.util.List;
 
+import at.ac.htlstp.carsharing.app.carsharingapp.R;
+import at.ac.htlstp.carsharing.app.carsharingapp.activities.CurTask;
+import at.ac.htlstp.carsharing.app.carsharingapp.activities.Login;
 import at.ac.htlstp.carsharing.app.carsharingapp.activities.Main_drawer;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -50,25 +55,34 @@ public class GeofenceTransitionsIntentService extends IntentService {
             StringBuilder sb = new StringBuilder();
             for(Geofence g : triggeringGeofences){
                     sb.append(g.getRequestId());
+
             }
-            Intent i = new Intent(this, Main_drawer.class);
+            final Intent i = new Intent(this, Login.class);
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, i, 0);
             NotificationManager notificationManager =
                     (NotificationManager) getSystemService(GeofenceTransitionsIntentService.NOTIFICATION_SERVICE);
-            String channelId = "carChannelId";
-            CharSequence channelName = "carChannel";
+            String channelId = "carChanneGeofencelId";
+            CharSequence channelName = "carChannelGeofence";
             int importance = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel notificationChannel = new NotificationChannel(channelId, channelName, importance);
             notificationChannel.enableLights(true);
-            notificationChannel.setLightColor(Color.RED);
+            notificationChannel.setLightColor(Color.BLUE);
             notificationChannel.enableVibration(true);
             notificationChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
             notificationManager.createNotificationChannel(notificationChannel);
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "carChannelId")
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "carChanneGeofencelId")
                     .setContentTitle("Geofence Entered: " + sb.toString())
                     .setContentText("Geofence Entered: " + sb.toString())
                     .setContentIntent(pendingIntent)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setSmallIcon(R.drawable.carsharing_logo);
+            Notification n = builder.build();
+            n.flags = Notification.FLAG_AUTO_CANCEL;
+            String ns = this.NOTIFICATION_SERVICE;
+            NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
+            mNotificationManager.notify(DataBean.getCurJob().getId(), n);
+
             JobClient client = GenericService.getClient(JobClient.class,"ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
             Call<Boolean> jCall = client.finishJob(DataBean.getCurJob().getId());
             jCall.enqueue(new Callback<Boolean>() {
@@ -76,6 +90,9 @@ public class GeofenceTransitionsIntentService extends IntentService {
                 public void onResponse(Call<Boolean> call, Response<Boolean> response) {
                     if(response.body()){
                         Log.i(TAG,"Job finished succ");
+                        DataBean.setCurJob(null);
+                        DataBean.setCurCar(null);
+                        GeofenceTransitionsIntentService.this.startActivity(i);
                         Toast.makeText(GeofenceTransitionsIntentService.this,"Job finished",Toast.LENGTH_LONG).show();
                     }else{
                         Log.e(TAG, "Job finished failed");
@@ -85,8 +102,11 @@ public class GeofenceTransitionsIntentService extends IntentService {
                 @Override
                 public void onFailure(Call<Boolean> call, Throwable t) {
                     Log.e(TAG, "Job finished Call failed");
+                    Log.e(TAG,"Job finished failure: " + t.getMessage());
+                    t.printStackTrace();
                 }
             });
+
             Toast.makeText(this,"Geofence entered: " + sb.toString(),Toast.LENGTH_LONG).show();
             Log.i(TAG, "Geofence entered: " + geofenceTransition);
         } else {

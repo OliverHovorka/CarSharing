@@ -72,6 +72,11 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * In dieser Activity wird der zur Zeit dem User zugewiesene Job angezeigt
+ * Man sieht hier die Route vom Mitarbeiter zu dem Auto und zu seiner Zieldestination
+ * Ebenfalls werden dem User alle wichtigen Daten zu dem Auto angezeigt
+ */
 public class CurTask extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, LocationListener,
         GoogleApiClient.OnConnectionFailedListener {
 
@@ -88,7 +93,16 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     private static LocationManager mLocationManager;
     private GeofencingClient geofencingClient;
     private PendingIntent geofencePendingIntent;
+    private static boolean updated = false;
 
+    /**
+     * In dieser Methode werden diverse Funktionen Initialisiert
+     * GoogleApiClient wird initialisiert
+     * Eine Instanz vom LocationRequest wird angelegt
+     * Es wird eine Instanz vom GeofenceClient erstellt und es wird ein Geofence um die Zieldestination gesetzt
+     * Es wird hier auch auf die Permissions geprüft
+     * @param savedInstanceState
+     */
     @SuppressLint({"MissingPermission", "NewApi"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +110,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.cur_task);
         Window w = this.getWindow();
+        updated = false;
         w.setStatusBarColor(ContextCompat.getColor(this, R.color.car2goBlue));
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -181,6 +196,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         }
     }
 
+
     private PendingIntent getGeofencePendingIntent() {
         // Reuse the PendingIntent if we already have it.
         if (geofencePendingIntent != null) {
@@ -205,12 +221,15 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         gmap = googleMap;
         googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
         LatLng wien = new LatLng(48.241696, 16.372928);
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(wien));
-        googleMap.setMinZoomPreference(10.0f);
-        googleMap.setMaxZoomPreference(50.0f);
+        googleMap.setMinZoomPreference(15.0f);
         setUpMarkers();
     }
 
+
+    /**
+     * Diese Methode wird aufgerufen sobald die Karte fertig geladen ist
+     * Hier wirden die Marker für das Auto und für den Zielort gehandlet
+     */
     public void setUpMarkers() {
         if (DataBean.getCurCar() != null) {
             if (gmap != null) {
@@ -230,7 +249,6 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                         .position(dest)
                         .title("Destination")
                         .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
-
                 if (carMarker != null && destMarker != null && userMarker != null) {
                     makeRoute();
                 }
@@ -245,12 +263,14 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
 
     @Override
     protected void onResume() {
+        updated = false;
         super.onResume();
         mGoogleApiClient.connect();
     }
 
     @Override
     protected void onPause() {
+        updated = false;
         super.onPause();
         if (mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
@@ -275,6 +295,11 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         }
     }
 
+    /**
+     * Diese Funktion wird jedesmal aufgerufen wenn der LocationListener eine neue Position meldet
+     * Es wird hier der Usermarker geupdated und weiters wird die Position an den Server gesendet
+     * @param location
+     */
     public void handleNewLocation(Location location) {
         if (DataBean.getUser() != null) {
             if (userMarker != null) {
@@ -302,8 +327,13 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
             double currentLatitude = location.getLatitude();
             double currentLongitude = location.getLongitude();
             LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+
             if (gmap != null) {
                 DataBean.setUserPosition(latLng);
+                if(!updated){
+                    gmap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                    updated = true;
+                }
                 userMarker = gmap.addMarker(new MarkerOptions()
                         .position(latLng)
                         .title("User")
@@ -322,6 +352,7 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
     public void onConnectionSuspended(int i) {
         Log.e(TAG, "Location services suspended. Please reconnect.");
     }
+
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
@@ -351,7 +382,9 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
                 .setWriteTimeout(1, TimeUnit.SECONDS);
     }
 
-
+    /**
+     * Diese Methode zeichnet die Route zwischen dem User dem um zu parkenden Autos
+     */
     public void makeRoute() {
         if (DataBean.getCurCar() != null) {
             DateTime now = new DateTime();
@@ -382,8 +415,12 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         }
     }
 
+    /**
+     * Diese Funktion zeichnet die Routen auf die Karte
+     * @param results
+     */
     private void addPolyline(DirectionsResult... results) {
-        Log.e(TAG,"Polyline: " + results.length);
+        Log.i(TAG,"Polyline: " + results.length);
         if(results.length < 2){
             Log.e(TAG,"Polyline dreck");
             return;
@@ -401,6 +438,14 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
 
     }
 
+    /**
+     * Hier wird der Text der im Head der Activity steht zusammengesetzt
+     * @param car ist der Typ des anzuzeigenden Autos
+     * @param plateNumber das Kennzeichen des anzuzeigenden Autos
+     * @param fuelType der Typ an Fuel
+     * @param fuelLevel der Tankfüllstand des anzuzeigenden Autos
+     * @param idleTime die Idletime des anzuzeigenden Autos
+     */
     public void makeHeaderString(String car, String plateNumber, String fuelType, String fuelLevel, String idleTime) {
         TextView t = (TextView) findViewById(R.id.car_details);
         StringBuilder sb = new StringBuilder();
@@ -428,6 +473,11 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         handleNewLocation(location);
     }
 
+
+    /**
+     * Hier wird die Uri zusammengebaut und GoogleMaps wird zur navigation aufgerufen
+     * @param v
+     */
     public void redirectMaps(View v) {
         if (DataBean.getCurJob() != null) {
             Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=" + userMarker.getPosition().latitude + "," + userMarker.getPosition().longitude +
@@ -448,4 +498,6 @@ public class CurTask extends AppCompatActivity implements OnMapReadyCallback, Go
         this.startActivity(i);
         finish();
     }
+
+
 }

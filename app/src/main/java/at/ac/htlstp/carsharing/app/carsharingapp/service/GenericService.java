@@ -26,7 +26,11 @@ public class GenericService {
 
     private static final Map<Class<?>, Object> CLIENT_CACHE = new HashMap<>();
 
-
+    /*
+     * Diese Methode generiert einen Client durch welchen mit dem REST Endpunkt kommuniziert werden kann
+     * Diese Funktion ist generisch da im Projekt CarSharing diverse Clients in verwendung sind
+     * Es wird hier ebenfalls ziwschen den Clients der Android Applikation und der Website unterschieden mit Hilfe von keys
+     */
     public static <T> T getClient(Class<T> cls, final String key) {
         synchronized (CLIENT_CACHE) {
             if (CLIENT_CACHE.containsKey(cls)) {
@@ -36,7 +40,10 @@ public class GenericService {
 
         String API_BASE_URL = "https://carsharing.privatevoid.net/server/rest/";
         Gson gson = new GsonBuilder().setLenient().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
-        
+
+        /*
+         * Hier wird der HTTPClient kreiert
+         */
         OkHttpClient okClient = new OkHttpClient.Builder().addInterceptor(new Interceptor() {
             @Override
             public Response intercept(Chain chain) throws IOException {
@@ -46,7 +53,11 @@ public class GenericService {
                 return chain.proceed(r);
             }
         }).build();
-        
+
+        /*
+         * Hier wird nun die URL festgelegt unter wlcher der REST Endpunkt Erreichbar ist.
+         * Weiters wird hier der Converter angegeben
+         */
         Retrofit.Builder builder = new Retrofit.Builder().baseUrl(API_BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create(gson));
         Retrofit retrofit = builder.client(okClient).build();

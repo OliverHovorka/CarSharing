@@ -26,6 +26,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -59,6 +60,12 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+Diese Activity wird beim Click auf einen Auto Marker aufgerufen
+Hier kann sich der User selbst ein Auto zuweisen entweder über eine Liste von Hotspots oder manuell durch langes klicken auf die Karte
+Nach der Zuweisung wird automatisch die CurTask aufgerufen in welcher der Aktuelle Job angezeigt wird
+ */
+
 public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, LocationListener,
         GoogleApiClient.OnConnectionFailedListener,GoogleMap.OnMapLongClickListener {
     private GoogleApiClient mGoogleApiClient;
@@ -76,8 +83,15 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
     private static com.google.maps.model.LatLng dest;
     private static Bitmap carIcon;
     private static Bitmap destIcon;
+    private static boolean updated = false;
     private static boolean fixed = false;
 
+
+    /**
+    In dieser Methode werden diverse Funktionen Initialisiert
+     GoogleApiClient wird initialisiert
+     Eine Instanz vom LocationRequest wird angelegt
+     */
     @SuppressLint({"MissingPermission", "NewApi"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +99,9 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.assign_car);
         Window w = this.getWindow();
+        updated = false;
+        dest = null;
+        fixed = false;
         w.setStatusBarColor(ContextCompat.getColor(this, R.color.car2goBlue));
         if(DataBean.getCurCar() != null) {
             makeHeaderString(DataBean.getCurCar().getCar().getModel(), DataBean.getCurCar().getCar().getPlateNumber(),
@@ -101,8 +118,6 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
-
-        Log.e(TAG,"Assign: " + mGoogleApiClient);
 
         mLocationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
@@ -140,6 +155,13 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         }
     }
 
+
+    /**
+     * Diese Funktion wird aufgerufen sobald die Googlemap asynchron geladen wurde
+     * Hier wird die Globale Variable gmap gesetzt
+     * Es wird hier auf die Map das ausgewählte Auto als Marker gezeichnet, weiters wird die Kamera auf den User fokusiert
+     * @param googleMap
+     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         if(DataBean.getCurCar() != null) {
@@ -157,16 +179,20 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                     .position(pos)
                     .title(DataBean.getCurCar().getCar().getVin())
                     .icon(BitmapDescriptorFactory.fromBitmap(smallMarker)));
-            googleMap.moveCamera(CameraUpdateFactory.newLatLng(wien));
-            googleMap.setMinZoomPreference(10.0f);
-            googleMap.setMaxZoomPreference(50.0f);
+            googleMap.setMinZoomPreference(15.0f);
         }else{
             Log.e(TAG,"onMapReady DataBean curCar is null");
         }
     }
 
+    /**
+     * In dieser Funktion wird der GoogleApiClient erneut verbunden
+     */
     @Override
     protected void onResume() {
+        updated = false;
+        dest = null;
+        fixed = false;
         super.onResume();
         if(mGoogleApiClient != null) {
             mGoogleApiClient.connect();
@@ -175,8 +201,12 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         }
     }
 
+    /**
+     * In dieser Funktion werden die Locationservices getrennt ebenso der GoogleApiClient
+     */
     @Override
     protected void onPause() {
+        updated = false;
         super.onPause();
         if (mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
@@ -184,6 +214,10 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         }
     }
 
+    /**
+     * In dieser Funktion werden die Locationservices erneut registriert
+     * @param bundle
+     */
     @SuppressLint("MissingPermission")
     @Override
     @SuppressWarnings("")
@@ -197,6 +231,12 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         }
     }
 
+
+    /**
+     * Diese Funktion wird jedesmal aufgerufen wenn der LocationListener eine neue Position meldet
+     * Es wird hier der Usermarker geupdated und weiters wird die Position an den Server gesendet
+     * @param location
+     */
     public void handleNewLocation(Location location) {
         if(DataBean.getUser() != null) {
             if (userMarker != null) {
@@ -219,18 +259,22 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
             });
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             if (gmap != null) {
+                if(!updated){
+                    gmap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                    updated = true;
+                }
                 DataBean.setUserPosition(latLng);
                 userMarker = gmap.addMarker(new MarkerOptions()
                         .position(latLng)
                         .title("User")
                         .icon(BitmapDescriptorFactory.fromBitmap(smallMarkerPerson)));
-                Log.e(TAG, "New Marker Added CURTASK");
                 makeRoute();
             }
         }else{
             Log.e(TAG,"handleNewLoc DataBean user is null");
         }
     }
+
 
     @Override
     public void onConnectionSuspended(int i) {
@@ -258,10 +302,17 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.e(TAG, "LOCATION CHANGED CURTASK");
         handleNewLocation(location);
     }
 
+    /**
+     * Hier wird der Text der im Head der Activity steht zusammengesetzt
+     * @param car ist der Typ des anzuzeigenden Autos
+     * @param plateNumber das Kennzeichen des anzuzeigenden Autos
+     * @param fuelType der Typ an Fuel
+     * @param fuelLevel der Tankfüllstand des anzuzeigenden Autos
+     * @param idleTime die Idletime des anzuzeigenden Autos
+     */
     public void makeHeaderString(String car, String plateNumber, String fuelType, String fuelLevel, String idleTime) {
         TextView t = (TextView) findViewById(R.id.car_details);
         StringBuilder sb = new StringBuilder();
@@ -292,6 +343,9 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
     }
 
 
+    /**
+     * Diese Methode zeichnet die Route zwischen dem User dem um zu parkenden Autos
+     */
     public void makeRoute() {
         DateTime now = new DateTime();
         try {
@@ -311,6 +365,9 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         }
     }
 
+    /**
+     * Diese Methode zeichnet die Route zwischen dem User dem um zu parkenden Autos und der Zieldestination
+     */
     public void makeRoutewithDest(){
         DateTime now = new DateTime();
         try {
@@ -336,11 +393,19 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
     }
 
 
+    /**
+     * Diese Funktion zeichnet die Routen auf die Karte
+     * @param results
+     */
     private void addPolyline(DirectionsResult results) {
         List<LatLng> decodedPath = PolyUtil.decode(results.routes[0].overviewPolyline.getEncodedPath());
         poly = gmap.addPolyline(new PolylineOptions().addAll(decodedPath).color(Color.rgb(0,158,224)));
     }
 
+    /**
+     * Diese Funktion zeichnet die Routen auf die Karte
+     * @param result
+     */
     private void addSecondPolyline(DirectionsResult result){
         if(poly2 != null){
             poly2.remove();
@@ -349,6 +414,11 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         poly2 = gmap.addPolyline(new PolylineOptions().addAll(decodedPath).color(Color.rgb(0,158,224)));
     }
 
+    /**
+     * Diese funktion wird beim Click des Buttons "Assign Car"
+     * Hier wird die Destination an den Server gesendet und ein Job für den eingeloggten User kreiert
+     * @param v
+     */
     public void assignJob(View v) {
         if(DataBean.getUser() != null) {
             if (dest != null) {
@@ -358,11 +428,11 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
                 callJob.enqueue(new Callback<Job>() {
                     @Override
                     public void onResponse(Call<Job> call, Response<Job> response) {
-                        Log.e(TAG, "Job creation status: " + response.code());
+                        Log.i(TAG, "Job creation status: " + response.code());
                         if (response.body() != null) {
                             DataBean.setCurJob(response.body());
                             AssignCar.this.startActivity(i);
-                            finish();
+                            AssignCar.this.finish();
                             Log.i(TAG, "Job creation: uid:" + DataBean.getUser().getId() + " vin: " + DataBean.getCurCar().getCar().getVin());
                             Log.i(TAG, "Job creation status: " + response.code());
                             Log.i(TAG, "Job creation: " + response.body());
@@ -386,6 +456,10 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         }
     }
 
+    /**
+     * Diese Funktion überprüft ob die Destination schon fix gesetzt ist
+     * @param v
+     */
     public void setDestination(View v) {
         if(dest == null){
             Toast.makeText(this,"No destination set",Toast.LENGTH_LONG).show();
@@ -397,7 +471,11 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
         }
     }
 
-
+    /**
+     * Diese Methode wird aufgerufen bei einem Langen Click auf die Googlemap
+     * hierbei wird der Marker auch direkt auf die Karte gezeichnet
+     * @param latLng
+     */
     @Override
     public void onMapLongClick(LatLng latLng) {
         if(!fixed) {
@@ -416,6 +494,7 @@ public class AssignCar extends AppCompatActivity implements OnMapReadyCallback, 
             Toast.makeText(this,"Destination already set",Toast.LENGTH_LONG).show();
         }
     }
+
 }
 
 

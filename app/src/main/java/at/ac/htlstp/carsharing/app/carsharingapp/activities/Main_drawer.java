@@ -121,6 +121,7 @@ public class Main_drawer extends AppCompatActivity
         BitmapDrawable bitmapdraw = (BitmapDrawable) ResourcesCompat.getDrawable(getResources(), R.drawable.person_marker, null);
         Bitmap b = bitmapdraw.getBitmap();
         smallMarkerPerson = Bitmap.createScaledBitmap(b, 200, 200, false);
+
     }
 
 
@@ -132,6 +133,9 @@ public class Main_drawer extends AppCompatActivity
             return;
         }
         gmap = googleMap;
+        if(DataBean.getUserPosition() != null){
+            googleMap.moveCamera(CameraUpdateFactory.newLatLng(DataBean.getUserPosition()));
+        }
         gmap.setOnMarkerClickListener(this);
         gmap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
         LatLng standort = new LatLng(48.21809, 16.2660599);
@@ -159,10 +163,7 @@ public class Main_drawer extends AppCompatActivity
                 Log.e(TAG,"DataBean curCar is null");
             }
         }
-        gmap.moveCamera(CameraUpdateFactory.newLatLng(standort));
-        googleMap.setMinZoomPreference(10.0f);
-        googleMap.setMaxZoomPreference(50.0f);
-
+        googleMap.setMinZoomPreference(12.5f);
     }
 
 
@@ -213,11 +214,17 @@ public class Main_drawer extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         mGoogleApiClient.connect();
+        if(DataBean.getUserPosition() != null && gmap != null){
+            gmap.moveCamera(CameraUpdateFactory.newLatLng(DataBean.getUserPosition()));
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        if(DataBean.getUserPosition() != null){
+            gmap.moveCamera(CameraUpdateFactory.newLatLng(DataBean.getUserPosition()));
+        }
         if (mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
             mGoogleApiClient.disconnect();
@@ -233,6 +240,7 @@ public class Main_drawer extends AppCompatActivity
             if (location == null) {
                 LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
             } else {
+                gmap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(location.getLatitude(),location.getLongitude())));
                 handleNewLocation(location);
             }
         } else {
@@ -247,6 +255,12 @@ public class Main_drawer extends AppCompatActivity
         }
         if (userMarker != null) {
             userMarker.remove();
+        }else{
+            double currentLatitude = location.getLatitude();
+            double currentLongitude = location.getLongitude();
+            LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+            DataBean.setUserPosition(latLng);
+            gmap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         }
         UserClient userPos = GenericService.getClient(UserClient.class, "ITz3WIaL3m8dWbXyMhdZkvATdhTbFo91cWab2JGgo23dWW4zWq5BUonb5nVpwU6X");
         BigDecimal lat = new BigDecimal(location.getLatitude());
@@ -326,5 +340,6 @@ public class Main_drawer extends AppCompatActivity
             }
         }
     }
+
 }
 

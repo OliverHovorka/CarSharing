@@ -115,7 +115,7 @@ public class CarCurrent implements Serializable {
 
     @Override
     public String toString() {
-        return "Car: " + this.getCar().getModel() + " Platenumber: " + this.getCar().getPlateNumber() + " Fuellevel: " + this.getFuelLevel();
+        return "Car: " + this.getCar().getModel() + " Platenumber: " + this.getCar().getPlateNumber() + "\n Fuellevel: " + this.getFuelLevel();
     }
 
 }
