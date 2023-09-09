@@ -8,36 +8,36 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:500873706908:android:1bbe67174b9d9ed8",
+        "mobilesdk_app_id": "",
         "android_client_info": {
           "package_name": "at.ac.htlstp.carsharing.app.carsharingapp"
         }
       },
       "oauth_client": [
         {
-          "client_id": "500873706908-hsj87reo8uucef5dn2vl0o5utsrrk6r1.apps.googleusercontent.com",
+          "client_id": "",
           "client_type": 1,
           "android_info": {
             "package_name": "at.ac.htlstp.carsharing.app.carsharingapp",
-            "certificate_hash": "c5bd32508f926faf89a34d2743d75425e49e4172"
+            "certificate_hash": ""
           }
         },
         {
-          "client_id": "500873706908-ig5tqu4oe8sogm81qpr974da4kaop4di.apps.googleusercontent.com",
+          "client_id": "",
           "client_type": 1,
           "android_info": {
             "package_name": "at.ac.htlstp.carsharing.app.carsharingapp",
-            "certificate_hash": "dd2ae03b41ac0c9a7507b671e13fe998c7b52068"
+            "certificate_hash": ""
           }
         },
         {
-          "client_id": "500873706908-qahodlrolj4tcn0ig18n7i33t7rfnj8f.apps.googleusercontent.com",
+          "client_id": "",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAp9cOxoUJ24Ar2Aku2Jn8URaseHpHiClI"
+          "current_key": ""
         }
       ],
       "services": {
@@ -48,7 +48,7 @@
           "status": 2,
           "other_platform_oauth_client": [
             {
-              "client_id": "500873706908-qahodlrolj4tcn0ig18n7i33t7rfnj8f.apps.googleusercontent.com",
+              "client_id": "",
               "client_type": 3
             }
           ]
